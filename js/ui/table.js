@@ -28,8 +28,8 @@ window.CampaignTable = {
         ${this.filterCard()}
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Remarks</th><th>Action</th></tr></thead>
-            <tbody>${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="10">No records found.</td></tr>'}</tbody>
+            <thead><tr><th>Photo</th><th>Name / ID</th><th>Address</th><th>Mobile</th><th>Party</th><th>Status</th><th>Remarks</th><th>Action</th></tr></thead>
+            <tbody>${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="8">No records found.</td></tr>'}</tbody>
           </table>
         </div>
         <div class="pager">
@@ -57,20 +57,31 @@ window.CampaignTable = {
     };
   },
 
-  rowHtml(row) {
+  statusText(row) {
     const h = window.CampaignHelpers;
     const d = h.defaults;
+    const section = window.CampaignState.section;
+    if (section === 'calls') return h.value(row.phone_status, d.phone_status);
+    if (section === 'votes') return h.value(row.vote_status, d.vote_status);
+    if (section === 'visits') return h.value(row.d2d_status, d.d2d_status);
+    if (section === 'transport') return h.value(row.transport_status, d.transport_status);
+    if (section === 'residents') return h.value(row.vote_status, d.vote_status);
+    return h.text(row.vote_assigned_by) || 'Unassigned';
+  },
+
+  rowHtml(row) {
+    const h = window.CampaignHelpers;
+    const photo = h.text(row.photo_url);
     const remark = h.text(row.remarks);
+    const address = h.text(row.house) || h.text(row.living_place) || h.text(row.lives_in) || '-';
     return `
       <tr>
+        <td>${photo ? `<img class="avatar" src="${h.escape(photo)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '<span class="avatar">?</span>'}</td>
         <td><strong>${h.escape(row.name || 'No name')}</strong><br><small>${h.escape(row.national_id || 'No ID')}</small></td>
-        <td>${h.escape(row.house || '-')}</td>
+        <td>${h.escape(address)}</td>
         <td>${row.phone ? `<a href="tel:${h.escape(row.phone)}">${h.escape(row.phone)}</a>` : '-'}</td>
         <td>${h.badge(row.party || '-')}</td>
-        <td>${h.badge(h.value(row.vote_status, d.vote_status))}</td>
-        <td>${h.badge(h.value(row.phone_status, d.phone_status))}</td>
-        <td>${h.badge(h.value(row.d2d_status, d.d2d_status))}</td>
-        <td>${h.text(row.vote_assigned_by) ? h.escape(row.vote_assigned_by) : h.badge('Unassigned', 'warn')}</td>
+        <td>${h.badge(this.statusText(row))}</td>
         <td>${remark ? `<small>${h.escape(h.shorten(remark, 70))}</small>` : '<small>No remarks</small>'}</td>
         <td><button class="primary" data-edit="${h.escape(row.id)}">Update</button></td>
       </tr>
