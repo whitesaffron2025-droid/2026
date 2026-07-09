@@ -66,7 +66,7 @@ window.CampaignRenderCampaigns = {
   },
   getTableHtml(pageRows) {
     const colspan = window.CampaignState.publicView ? 5 : 10;
-    return pageRows.map(row => this.getRowHtml(row)).join('') || `<tr><td colspan="${colspan}">No records found.</td></tr>`;
+    return pageRows.map(row => this.getRowHtml(row)).join('') || `<tr><td colspan="${colspan}">No records found. Clear filters or refresh data.</td></tr>`;
   },
   getPaginationState() {
     const state = window.CampaignState;
@@ -108,6 +108,8 @@ window.CampaignRenderCampaigns = {
     u.el('nextPage').disabled = state.page >= html.totalPages;
     u.el('activeFilterSummary').innerHTML = html.filters;
     u.el('recordsHead').innerHTML = html.head;
+    const bulkToolbar = document.getElementById('bulkToolbar');
+    if (bulkToolbar) bulkToolbar.style.display = state.publicView ? 'none' : '';
     const body = document.getElementById('table-body') || document.getElementById('recordsBody');
     if (body) body.innerHTML = html.rows;
     this.updateSelectionSummary(html.pageRows);
