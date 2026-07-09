@@ -58,6 +58,12 @@ window.CampaignFilters = {
     if (!status || status === 'all') return records || [];
     return (records || []).filter(row => row.d2d_status === status);
   },
+  setSelect(id, value) {
+    const el = document.getElementById(id);
+    if (!el || !value) return;
+    const match = [...el.options].find(option => option.value === value || option.value.toLowerCase() === String(value).toLowerCase());
+    if (match) el.value = match.value;
+  },
   applyUrlParams() {
     const state = window.CampaignState;
     const u = window.CampaignUtils;
@@ -72,18 +78,17 @@ window.CampaignFilters = {
     const unassigned = params.get('unassigned') === 'true' || params.get('filter') === 'unassigned';
     const publicFlag = params.get('public') === 'true';
 
-    if (publicFlag || assigner || d2d || callStatus || callOutcome || house || id || search || unassigned) {
-      state.publicView = publicFlag;
-      if (search) u.el('searchInput').value = search;
-      if (assigner) u.el('assignerFilter').value = assigner;
-      if (d2d) u.el('d2dFilter').value = d2d;
-      if (callStatus) u.el('callStatusFilter').value = callStatus;
-      if (callOutcome) u.el('callOutcomeFilter').value = callOutcome;
-      if (unassigned) u.el('assignerFilter').value = 'unassigned';
-      state.filters.house = house;
-      state.filters.id = id;
-      state.urlFiltersApplied = true;
-    }
+    state.publicView = publicFlag;
+    state.filters.house = house;
+    state.filters.id = id;
+    state.urlFiltersApplied = true;
+
+    if (search) u.el('searchInput').value = search;
+    if (assigner) this.setSelect('assignerFilter', assigner);
+    if (d2d) this.setSelect('d2dFilter', d2d);
+    if (callStatus) this.setSelect('callStatusFilter', callStatus);
+    if (callOutcome) this.setSelect('callOutcomeFilter', callOutcome);
+    if (unassigned) u.el('assignerFilter').value = 'unassigned';
   }
 };
 
