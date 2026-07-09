@@ -1,13 +1,9 @@
 window.CampaignSections = {
   title(section) {
+    const config = window.CampaignSectionConfigs && window.CampaignSectionConfigs[section];
+    if (config) return config.title;
     return {
       dashboard: 'Campaign Dashboard',
-      residents: 'Residents',
-      assign: 'Assign Voters',
-      calls: 'Call Center',
-      votes: 'Vote Decision',
-      visits: 'D2D Visits',
-      transport: 'Transport',
       reports: 'Reports'
     }[section] || 'Residents';
   },
@@ -19,14 +15,7 @@ window.CampaignSections = {
 
   searchHaystack(row) {
     const h = window.CampaignHelpers;
-    const category = window.CampaignState.searchCategory || 'any';
-    const map = {
-      name: [row.name],
-      id: [row.national_id],
-      mobile: [row.phone],
-      any: [row.name, row.national_id, row.phone, row.party, row.remarks, row.vote_assigned_by]
-    };
-    return (map[category] || map.any).map(value => h.text(value).toLowerCase()).join(' ');
+    return [row.name, row.national_id, row.phone].map(value => h.text(value).toLowerCase()).join(' ');
   },
 
   baseRows() {
@@ -46,11 +35,23 @@ window.CampaignSections = {
   },
 
   rowsFor(section) {
+    const h = window.CampaignHelpers;
+    let rows = this.baseRows();
+
     if (section === 'assign') return window.CampaignAssign.rows();
     if (section === 'calls') return window.CampaignCalls.rows();
-    if (section === 'votes') return window.CampaignVotes.rows();
-    if (section === 'visits') return window.CampaignVisits.rows();
-    if (section === 'transport') return window.CampaignTransport.rows();
-    return this.baseRows();
+    if (section === 'votes') {
+      if (window.CampaignState.voteStatus !== 'all') rows = rows.filter(row => h.value(row.vote_status, h.defaults.vote_status) === window.CampaignState.voteStatus);
+      return rows;
+    }
+    if (section === 'visits') {
+      if (window.CampaignState.visitStatus !== 'all') rows = rows.filter(row => h.value(row.d2d_status, h.defaults.d2d_status) === window.CampaignState.visitStatus);
+      return rows;
+    }
+    if (section === 'transport') {
+      if (window.CampaignState.transportStatus !== 'all') rows = rows.filter(row => h.value(row.transport_status, h.defaults.transport_status) === window.CampaignState.transportStatus);
+      return rows;
+    }
+    return rows;
   }
 };
