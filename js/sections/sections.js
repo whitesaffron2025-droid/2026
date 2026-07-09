@@ -12,16 +12,19 @@ window.CampaignSections = {
     }[section] || 'Residents';
   },
 
+  rowAddress(row) {
+    const h = window.CampaignHelpers;
+    return h.text(row.house) || h.text(row.living_place) || h.text(row.lives_in);
+  },
+
   searchHaystack(row) {
     const h = window.CampaignHelpers;
     const category = window.CampaignState.searchCategory || 'any';
-    const address = [row.house, row.lives_in, row.living_place].map(value => h.text(value)).join(' ');
     const map = {
       name: [row.name],
       id: [row.national_id],
-      address: [address],
       mobile: [row.phone],
-      any: [row.name, row.national_id, row.phone, row.house, row.lives_in, row.living_place, row.party, row.remarks, row.vote_assigned_by]
+      any: [row.name, row.national_id, row.phone, row.party, row.remarks, row.vote_assigned_by]
     };
     return (map[category] || map.any).map(value => h.text(value).toLowerCase()).join(' ');
   },
@@ -31,6 +34,7 @@ window.CampaignSections = {
     const state = window.CampaignState;
     let rows = state.rows.slice();
 
+    if (state.address !== 'all') rows = rows.filter(row => this.rowAddress(row) === state.address);
     if (state.party !== 'all') rows = rows.filter(row => h.text(row.party).toUpperCase() === state.party);
 
     if (state.search) {
@@ -38,7 +42,7 @@ window.CampaignSections = {
       rows = rows.filter(row => this.searchHaystack(row).includes(q));
     }
 
-    return rows.sort((a, b) => h.text(a.house).localeCompare(h.text(b.house), undefined, { numeric: true }) || h.text(a.name).localeCompare(h.text(b.name)));
+    return rows.sort((a, b) => this.rowAddress(a).localeCompare(this.rowAddress(b), undefined, { numeric: true }) || h.text(a.name).localeCompare(h.text(b.name)));
   },
 
   rowsFor(section) {
