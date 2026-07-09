@@ -5,8 +5,9 @@ window.CampaignFilters = {
     const q = u.lower(u.el('searchInput').value);
     const party = u.el('partyFilter').value;
     const status = u.el('statusFilter').value;
+    const assigner = u.el('assignerFilter').value;
     state.pageSize = Number(u.el('pageSize').value || window.CampaignConfig.pageSize);
-    state.filters = { search: q, party, status };
+    state.filters = { ...state.filters, search: q, party, status, assigner };
 
     const filtered = state.rows.filter(row => {
       const haystack = [
@@ -22,7 +23,11 @@ window.CampaignFilters = {
       ].map(v => u.lower(v)).join(' ');
 
       if (q && !haystack.includes(q)) return false;
+      if (state.filters.house && !u.lower(row.house).includes(u.lower(state.filters.house))) return false;
+      if (state.filters.id && u.lower(row.national_id) !== u.lower(state.filters.id)) return false;
       if (party !== 'all' && u.text(row.party).toUpperCase() !== party) return false;
+      if (assigner === 'unassigned' && u.text(row.vote_assigned_by)) return false;
+      if (assigner !== 'all' && assigner !== 'unassigned' && u.lower(row.vote_assigned_by) !== u.lower(assigner)) return false;
       if (status === 'unassigned') return !u.text(row.vote_assigned_by);
       if (status !== 'all') {
         return [
@@ -39,5 +44,26 @@ window.CampaignFilters = {
 
     state.setFiltered(filtered);
     return filtered;
+  },
+  applyUrlParams() {
+    const state = window.CampaignState;
+    const u = window.CampaignUtils;
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get('search') || '';
+    const assigner = params.get('assigner') || '';
+    const house = params.get('house') || '';
+    const id = params.get('id') || params.get('voter') || '';
+    const unassigned = params.get('unassigned') === 'true' || params.get('filter') === 'unassigned';
+    const publicFlag = params.get('public') === 'true';
+
+    if (publicFlag || assigner || house || id || search || unassigned) {
+      state.publicView = publicFlag;
+      if (search) u.el('searchInput').value = search;
+      if (assigner) u.el('assignerFilter').value = assigner;
+      if (unassigned) u.el('assignerFilter').value = 'unassigned';
+      state.filters.house = house;
+      state.filters.id = id;
+      state.urlFiltersApplied = true;
+    }
   }
 };
