@@ -7,25 +7,31 @@ window.CampaignApp = {
     select.innerHTML = '<option value="all">All assigners</option><option value="unassigned">Unassigned</option>' + names.map(name => `<option value="${name}">${name}</option>`).join('');
     if ([...select.options].some(option => option.value === current)) select.value = current;
   },
+  setActiveView(viewName) {
+    const u = window.CampaignUtils;
+    document.querySelectorAll('.nav-btn').forEach(button => button.classList.toggle('active', button.dataset.view === viewName));
+    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+    u.el(`${viewName}View`).classList.add('active');
+  },
   async load() {
     const u = window.CampaignUtils;
     try {
+      const params = new URLSearchParams(window.location.search);
+      window.CampaignState.publicView = params.get('public') === 'true';
+      window.CampaignState.urlFiltersApplied = false;
+      window.CampaignState.selectedIds.clear();
       u.el('connectionStatus').textContent = 'Loading… 0';
       const rows = await window.CampaignApi.fetchAllRows(count => {
         u.el('connectionStatus').textContent = `Loading… ${u.fmt(count)}`;
       });
       window.CampaignState.setRows(rows.map(row => u.normalize(row)));
       this.populateAssigners();
-      if (!window.CampaignState.urlFiltersApplied) window.CampaignFilters.applyUrlParams();
+      window.CampaignFilters.applyUrlParams();
       u.el('connectionStatus').textContent = `${window.CampaignState.publicView ? 'Public view' : 'Connected'} • ${u.fmt(window.CampaignState.rows.length)} records`;
       u.el('lastUpdated').textContent = new Date().toLocaleString();
       window.CampaignState.resetPage();
       this.render();
-      if (window.CampaignState.publicView) {
-        document.querySelectorAll('.nav-btn').forEach(button => button.classList.toggle('active', button.dataset.view === 'campaigns'));
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        u.el('campaignsView').classList.add('active');
-      }
+      this.setActiveView(window.CampaignState.publicView ? 'campaigns' : 'dashboard');
     } catch (error) {
       console.error(error);
       u.el('connectionStatus').textContent = 'Load error';
@@ -103,11 +109,7 @@ window.CampaignApp = {
       const closeButton = event.target.closest('[data-close-modal]');
       if (closeButton) window.CampaignModals.close();
       const viewButton = event.target.closest('[data-view]');
-      if (viewButton) {
-        document.querySelectorAll('.nav-btn').forEach(button => button.classList.toggle('active', button === viewButton));
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        u.el(`${viewButton.dataset.view}View`).classList.add('active');
-      }
+      if (viewButton) this.setActiveView(viewButton.dataset.view);
       const editButton = event.target.closest('[data-edit-id]');
       if (editButton) {
         const id = Number(editButton.dataset.editId);
