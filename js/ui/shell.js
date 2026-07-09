@@ -23,16 +23,33 @@ window.CampaignShell = {
       <main class="shell">
         <section class="hero">
           <div>
-            <p class="eyebrow">Clean workflow</p>
+            <p class="eyebrow">Modern workflow</p>
             <h1 id="pageTitle">Campaign Dashboard</h1>
-            <p class="hero-text">Each section is a focused work queue.</p>
+            <p class="hero-text">Search, filter, update and manage every voter from clean section-based work queues.</p>
           </div>
         </section>
 
-        <section class="toolbar" aria-label="Filters">
-          <label>Search<input id="searchInput" type="search" placeholder="Name, ID, phone, house" autocomplete="off"></label>
-          <label>Party<select id="partyFilter"><option value="all">All</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select></label>
-          <label>Page size<select id="pageSize"><option value="20">20</option><option value="50">50</option></select></label>
+        <section class="toolbar search-panel" aria-label="Filters">
+          <label>Search By
+            <select id="searchCategory">
+              <option value="any">Any field</option>
+              <option value="name">Name</option>
+              <option value="id">ID</option>
+              <option value="address">Address</option>
+              <option value="mobile">Mobile</option>
+            </select>
+          </label>
+          <label class="search-wide">Search
+            <input id="searchInput" type="search" placeholder="Type search text" autocomplete="off">
+          </label>
+          <button class="primary search-button" id="searchBtn">Search</button>
+          <button class="secondary search-button" id="clearSearchBtn">Clear</button>
+          <label>Party
+            <select id="partyFilter"><option value="all">All</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select>
+          </label>
+          <label>Page size
+            <select id="pageSize"><option value="20">20</option><option value="50">50</option></select>
+          </label>
         </section>
 
         <section id="dashboard"></section>
