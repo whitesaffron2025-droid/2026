@@ -18,6 +18,34 @@ window.CampaignAssign = {
     return rows;
   },
 
+  filterCard(assigners) {
+    const h = window.CampaignHelpers;
+    const state = window.CampaignState;
+    return `
+      <div class="toolbar assign-toolbar section-filter">
+        <label>Address<select id="addressFilter"><option value="all">All Addresses</option></select></label>
+        <label>Assign Category
+          <select id="assignMode">
+            <option value="unassigned" ${this.mode === 'unassigned' ? 'selected' : ''}>Unassigned</option>
+            <option value="assigned" ${this.mode === 'assigned' ? 'selected' : ''}>Assigned</option>
+            <option value="all" ${this.mode === 'all' ? 'selected' : ''}>All Residents</option>
+          </select>
+        </label>
+        <label>Assigner
+          <select id="assignerMode">
+            <option value="all">All assigners</option>
+            ${assigners.map(name => `<option value="${h.escape(name)}" ${this.assignee === name ? 'selected' : ''}>${h.escape(name)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="search-wide">Search<input id="searchInput" type="search" placeholder="Name, ID or mobile" value="${h.escape(state.search)}" autocomplete="off"></label>
+        <button class="primary search-button" id="searchBtn">Search</button>
+        <button class="secondary search-button" id="clearSearchBtn">Clear</button>
+        <label>Party<select id="partyFilter"><option value="all" ${state.party === 'all' ? 'selected' : ''}>All</option><option value="PNC" ${state.party === 'PNC' ? 'selected' : ''}>PNC</option><option value="MDP" ${state.party === 'MDP' ? 'selected' : ''}>MDP</option></select></label>
+        <label>Page size<select id="pageSize"><option value="20" ${state.pageSize === 20 ? 'selected' : ''}>20</option><option value="50" ${state.pageSize === 50 ? 'selected' : ''}>50</option></select></label>
+      </div>
+    `;
+  },
+
   render() {
     const h = window.CampaignHelpers;
     const rows = this.rows();
@@ -30,46 +58,14 @@ window.CampaignAssign = {
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('content').innerHTML = `
       <article class="panel">
-        <div class="panel-head">
-          <h2>Assign Voters</h2>
-          <span>${rows.length.toLocaleString()} records</span>
-        </div>
-
-        <div class="toolbar assign-toolbar">
-          <label>Assign Category
-            <select id="assignMode">
-              <option value="unassigned" ${this.mode === 'unassigned' ? 'selected' : ''}>Unassigned</option>
-              <option value="assigned" ${this.mode === 'assigned' ? 'selected' : ''}>Assigned</option>
-              <option value="all" ${this.mode === 'all' ? 'selected' : ''}>All Residents</option>
-            </select>
-          </label>
-          <label>Assigner
-            <select id="assignerMode">
-              <option value="all">All assigners</option>
-              ${assigners.map(name => `<option value="${h.escape(name)}" ${this.assignee === name ? 'selected' : ''}>${h.escape(name)}</option>`).join('')}
-            </select>
-          </label>
-        </div>
-
+        <div class="panel-head"><h2>Assign Voters</h2><span>${rows.length.toLocaleString()} records</span></div>
+        ${this.filterCard(assigners)}
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>Photo</th>
-                <th>Name / ID</th>
-                <th>Address</th>
-                <th>Mobile</th>
-                <th>Assigned To</th>
-                <th>Remarks</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="7">No assign records found.</td></tr>'}
-            </tbody>
+            <thead><tr><th>Photo</th><th>Name / ID</th><th>Address</th><th>Mobile</th><th>Assigned To</th><th>Remarks</th><th>Action</th></tr></thead>
+            <tbody>${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="7">No assign records found.</td></tr>'}</tbody>
           </table>
         </div>
-
         <div class="pager">
           <button class="secondary" id="prevPage" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>
           <span>Page ${state.page} of ${totalPages}</span>
@@ -77,6 +73,8 @@ window.CampaignAssign = {
         </div>
       </article>
     `;
+
+    window.CampaignShell.renderAddressOptions();
 
     document.getElementById('assignMode').onchange = event => {
       this.mode = event.target.value;
