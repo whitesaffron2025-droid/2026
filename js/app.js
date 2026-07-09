@@ -50,6 +50,7 @@
         const index = rows.findIndex(function (row) { return String(row.id) === String(id); });
         if (index >= 0) rows[index] = Object.assign({}, rows[index], updated);
         window.CampaignModal.close();
+        window.CampaignShell.renderAddressOptions();
         window.CampaignApp.render();
         alert('Saved.');
       } catch (error) {
@@ -69,10 +70,13 @@
     clearSearch() {
       const searchInput = document.getElementById('searchInput');
       const category = document.getElementById('searchCategory');
+      const address = document.getElementById('addressFilter');
       if (searchInput) searchInput.value = '';
       if (category) category.value = 'any';
+      if (address) address.value = 'all';
       window.CampaignState.search = '';
       window.CampaignState.searchCategory = 'any';
+      window.CampaignState.address = 'all';
       window.CampaignState.resetPage();
       this.render();
     },
@@ -101,6 +105,12 @@
           const row = window.CampaignState.rows.find(function (item) { return String(item.id) === String(editButton.dataset.edit); });
           if (row) window.CampaignModal.open(row);
         }
+      });
+
+      document.getElementById('addressFilter').addEventListener('input', function () {
+        window.CampaignState.address = this.value;
+        window.CampaignState.resetPage();
+        self.render();
       });
 
       document.getElementById('searchInput').addEventListener('keydown', function (event) {
@@ -134,6 +144,7 @@
       const params = new URLSearchParams(window.location.search);
       window.CampaignState.setSection(params.get('section') || 'dashboard');
       window.CampaignState.party = params.get('party') || 'all';
+      window.CampaignState.address = params.get('address') || 'all';
       window.CampaignState.searchCategory = params.get('searchBy') || 'any';
       window.CampaignState.search = params.get('q') || '';
       document.getElementById('partyFilter').value = window.CampaignState.party;
@@ -144,6 +155,7 @@
         window.CampaignShell.setStatus('Loading records...');
         const rows = await window.CampaignApi.fetchAllRows();
         window.CampaignState.setRows(rows);
+        window.CampaignShell.renderAddressOptions();
         window.CampaignShell.setStatus(`Connected • ${rows.length.toLocaleString()} records`);
         this.render();
       } catch (error) {
