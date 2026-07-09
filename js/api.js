@@ -91,3 +91,11 @@ window.CampaignApi = {
     return response.json();
   }
 };
+
+Object.assign(window, {
+  fetchRecords: (...args) => window.CampaignApi.fetchAllRows(...args),
+  fetchStats: async () => window.CampaignMetrics.calculate(await window.CampaignApi.fetchAllRows()),
+  updateRecord: (...args) => window.CampaignApi.updateRecord(...args),
+  bulkUpdateRecords: (...args) => window.CampaignApi.bulkUpdate(...args),
+  bulkDeleteRecords: (...args) => window.CampaignApi.bulkDelete(...args)
+});
