@@ -7,6 +7,7 @@ window.CampaignState = {
   party: 'all',
   page: 1,
   pageSize: 20,
+  structureMode: true,
 
   setRows(rows) {
     this.rows = Array.isArray(rows) ? rows : [];
