@@ -48,7 +48,8 @@ window.CampaignRenderDashboard = {
   },
   inject(html) {
     const u = window.CampaignUtils;
-    u.el('kpiGrid').innerHTML = html.statsCards;
+    const statsTarget = document.getElementById('dashboard-stats') || document.getElementById('kpiGrid');
+    if (statsTarget) statsTarget.innerHTML = html.statsCards;
     u.el('progressBars').innerHTML = html.progress;
     u.el('priorityList').innerHTML = html.priorities;
   },
@@ -59,3 +60,7 @@ window.CampaignRenderDashboard = {
     return html;
   }
 };
+
+Object.assign(window, {
+  renderDashboard: () => window.CampaignRenderDashboard.render()
+});
