@@ -61,7 +61,18 @@ window.CampaignApp = {
     u.el('exportBtn').onclick = () => window.CampaignActions.exportData();
     u.el('shareBtn').onclick = () => window.CampaignShare.copyPublicUrl();
     u.el('copyReportBtn').onclick = () => window.CampaignActions.copyReport();
+    document.addEventListener('change', event => {
+      if (event.target && event.target.id === 'modalVoteStatus') window.CampaignModals.syncReachStatus();
+    });
+    document.addEventListener('submit', async event => {
+      if (event.target && event.target.id === 'editForm') {
+        event.preventDefault();
+        await window.CampaignActions.saveRecord(event.target.dataset.recordId, event.target);
+      }
+    });
     document.addEventListener('click', event => {
+      const closeButton = event.target.closest('[data-close-modal]');
+      if (closeButton) window.CampaignModals.close();
       const viewButton = event.target.closest('[data-view]');
       if (viewButton) {
         document.querySelectorAll('.nav-btn').forEach(button => button.classList.toggle('active', button === viewButton));
