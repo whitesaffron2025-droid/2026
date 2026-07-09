@@ -31,9 +31,45 @@ window.CampaignRenderAnalytics = {
     const u = window.CampaignUtils;
     return `<div class="insight"><b>Loaded full database</b><br><small>${u.fmt(stats.total)} records included in this dashboard.</small></div>${this.getCallCenterAnalyticsHtml(stats)}${this.getD2DAnalyticsHtml(stats)}${this.getAssignerAnalyticsHtml()}`;
   },
+  selectedReportFields() {
+    return [...document.querySelectorAll('.report-field:checked')].map(input => input.value);
+  },
+  activeFilterText() {
+    const s = window.CampaignState.filters;
+    const parts = [];
+    if (s.search) parts.push(`Search: ${s.search}`);
+    if (s.party !== 'all') parts.push(`Party: ${s.party}`);
+    if (s.status !== 'all') parts.push(`Outreach: ${s.status}`);
+    if (s.d2d !== 'all') parts.push(`D2D: ${s.d2d}`);
+    if (s.callStatus !== 'all') parts.push(`Call: ${s.callStatus}`);
+    if (s.callOutcome !== 'all') parts.push(`Outcome: ${s.callOutcome}`);
+    if (s.assigner !== 'all') parts.push(`Assigner: ${s.assigner}`);
+    if (s.house) parts.push(`House: ${s.house}`);
+    if (s.id) parts.push(`ID: ${s.id}`);
+    return parts.length ? parts.join('\n') : 'No active filters';
+  },
   getReportText(stats) {
     const u = window.CampaignUtils;
-    return `Report\nTotal records: ${u.fmt(stats.total)}\nReached: ${u.fmt(stats.reached)}\nCalled: ${u.fmt(stats.called)}\nWill vote: ${u.fmt(stats.willVote)}\nNeed call: ${u.fmt(stats.needCall)}\nAssigned: ${u.fmt(stats.assigned)}\nUnassigned: ${u.fmt(stats.unassigned)}\n\nCall Center\nNeed call: ${u.fmt(stats.needCall)}\nCalled: ${u.fmt(stats.called)}\nNo phone: ${u.fmt(stats.noPhone)}\nBusy: ${u.fmt(stats.busy)}\nDisconnected/Wrong/Out of coverage: ${u.fmt(stats.disconnected)}\nTotal call attempts: ${u.fmt(stats.totalCallAttempts)}\nAverage call attempts: ${stats.avgCallAttempts.toFixed(2)}\nAverage call duration seconds: ${stats.avgCallDuration.toFixed(1)}\nWill vote from calls: ${u.fmt(stats.willVoteFromCalls)}\nCall success rate: ${stats.callSuccessRate.toFixed(1)}%\nCall conversion rate: ${stats.callConversionRate.toFixed(1)}%\nSMS sent: ${u.fmt(stats.smsSent)}\nEmail sent: ${u.fmt(stats.emailSent)}\n\nD2D\nReached/Visited: ${u.fmt(stats.d2d)}\nNot visited: ${u.fmt(stats.d2dNotVisited)}\nNot home: ${u.fmt(stats.d2dNotHome)}\nLive in another place: ${u.fmt(stats.d2dLiveAnother)}`;
+    const fields = this.selectedReportFields();
+    const lines = [`Campaign Report`, `Generated: ${new Date().toLocaleString()}`, `Filtered records: ${u.fmt(window.CampaignState.filtered.length)}`, ''];
+    if (fields.includes('summary')) {
+      lines.push('Summary', `Total records: ${u.fmt(stats.total)}`, `Reached: ${u.fmt(stats.reached)}`, `Called: ${u.fmt(stats.called)}`, `Will vote: ${u.fmt(stats.willVote)}`, `Need call: ${u.fmt(stats.needCall)}`, `Assigned: ${u.fmt(stats.assigned)}`, `Unassigned: ${u.fmt(stats.unassigned)}`, '');
+    }
+    if (fields.includes('call')) {
+      lines.push('Call Center', `Need call: ${u.fmt(stats.needCall)}`, `Called: ${u.fmt(stats.called)}`, `No phone: ${u.fmt(stats.noPhone)}`, `Busy: ${u.fmt(stats.busy)}`, `Disconnected/Wrong/Out of coverage: ${u.fmt(stats.disconnected)}`, `Total call attempts: ${u.fmt(stats.totalCallAttempts)}`, `Average call attempts: ${stats.avgCallAttempts.toFixed(2)}`, `Average call duration seconds: ${stats.avgCallDuration.toFixed(1)}`, `Will vote from calls: ${u.fmt(stats.willVoteFromCalls)}`, `Call success rate: ${stats.callSuccessRate.toFixed(1)}%`, `Call conversion rate: ${stats.callConversionRate.toFixed(1)}%`, `SMS sent: ${u.fmt(stats.smsSent)}`, `Email sent: ${u.fmt(stats.emailSent)}`, '');
+    }
+    if (fields.includes('d2d')) {
+      lines.push('D2D', `Reached/Visited: ${u.fmt(stats.d2d)}`, `Not visited: ${u.fmt(stats.d2dNotVisited)}`, `Not home: ${u.fmt(stats.d2dNotHome)}`, `Live in another place: ${u.fmt(stats.d2dLiveAnother)}`, '');
+    }
+    if (fields.includes('assigner')) {
+      lines.push('Top Assigners');
+      window.CampaignMetrics.assignerStats().slice(0, 10).forEach(item => lines.push(`${item.name}: ${u.fmt(item.total)} assigned, ${u.fmt(item.reached)} reached, ${u.fmt(item.willVote)} will vote`));
+      lines.push('');
+    }
+    if (fields.includes('filters')) {
+      lines.push('Active Filters', this.activeFilterText(), '');
+    }
+    return lines.join('\n');
   },
   getAnalyticsHtml(stats) {
     return {
@@ -49,7 +85,7 @@ window.CampaignRenderAnalytics = {
     u.el('reportOutput').textContent = html.report;
   },
   render() {
-    const stats = window.CampaignMetrics.calculate();
+    const stats = window.CampaignMetrics.calculate(window.CampaignState.filtered.length ? window.CampaignState.filtered : window.CampaignState.rows);
     const html = this.getAnalyticsHtml(stats);
     this.inject(html);
     return html;
