@@ -12,6 +12,7 @@ window.CampaignWorkPageRenderer = {
           <h2>${h.escape(config.title)}</h2>
           <span>${window.CampaignState.structureMode ? 'Structure mode' : rows.length.toLocaleString() + ' records'}</span>
         </div>
+        ${window.CampaignStatsRenderer.render(section)}
         ${window.CampaignFiltersRenderer.render(section)}
         ${window.CampaignTableRenderer.render(section, rows)}
         ${window.CampaignPaginationRenderer.render(rows.length)}
