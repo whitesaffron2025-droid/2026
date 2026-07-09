@@ -89,7 +89,7 @@ window.CampaignRenderCampaigns = {
   },
   updateSelectionSummary(pageRows) {
     const u = window.CampaignUtils;
-    const selectedCount = u.el('selectedCount');
+    const selectedCount = document.getElementById('selectedCount');
     if (selectedCount) selectedCount.textContent = `${u.fmt(window.CampaignState.selectedIds.size)} selected`;
     const selectAll = document.getElementById('selectAllRows');
     if (selectAll && pageRows) {
@@ -108,7 +108,8 @@ window.CampaignRenderCampaigns = {
     u.el('nextPage').disabled = state.page >= html.totalPages;
     u.el('activeFilterSummary').innerHTML = html.filters;
     u.el('recordsHead').innerHTML = html.head;
-    u.el('recordsBody').innerHTML = html.rows;
+    const body = document.getElementById('table-body') || document.getElementById('recordsBody');
+    if (body) body.innerHTML = html.rows;
     this.updateSelectionSummary(html.pageRows);
   },
   render() {
@@ -117,3 +118,7 @@ window.CampaignRenderCampaigns = {
     return html;
   }
 };
+
+Object.assign(window, {
+  renderCampaigns: () => window.CampaignRenderCampaigns.render()
+});
