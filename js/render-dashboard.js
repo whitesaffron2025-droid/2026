@@ -3,11 +3,13 @@ window.CampaignRenderDashboard = {
     const u = window.CampaignUtils;
     const items = [
       ['Total Records', stats.total, 'All voters in table'],
+      ['Will Vote', stats.willVote, `${u.pct(stats.willVote, stats.total)}% support`],
       ['Reached', stats.reached, `${u.pct(stats.reached, stats.total)}% outreach`],
       ['Called', stats.called, `${u.pct(stats.called, stats.total)}% phone`],
-      ['Will Vote', stats.willVote, `${u.pct(stats.willVote, stats.total)}% support`],
       ['Need Call', stats.needCall, `${u.pct(stats.needCall, stats.total)}% pending`],
-      ['Assigned', stats.assigned, `${u.fmt(stats.unassigned)} unassigned`]
+      ['No Phone', stats.noPhone, `${u.pct(stats.noPhone, stats.total)}% missing`],
+      ['Call Attempts', stats.totalCallAttempts, `${stats.callSuccessRate.toFixed(1)}% success`],
+      ['Call Conversion', stats.willVoteFromCalls, `${stats.callConversionRate.toFixed(1)}% will vote from calls`]
     ];
     return items.map(([title, value, sub]) => `<article class="kpi"><span>${title}</span><strong>${u.fmt(value)}</strong><small>${sub}</small></article>`).join('');
   },
@@ -18,7 +20,8 @@ window.CampaignRenderDashboard = {
       ['Call rate', stats.called, stats.total],
       ['Will vote rate', stats.willVote, stats.total],
       ['D2D reach', stats.d2d, stats.total],
-      ['Guaranteed', stats.guaranteed, stats.total]
+      ['Guaranteed', stats.guaranteed, stats.total],
+      ['Call conversion', stats.willVoteFromCalls, stats.called || 1]
     ];
     return items.map(([title, value, total]) => {
       const p = u.pct(value, total);
@@ -29,6 +32,7 @@ window.CampaignRenderDashboard = {
     const u = window.CampaignUtils;
     const items = [
       ['Need call', stats.needCall],
+      ['No phone', stats.noPhone],
       ['Not decided', stats.notDecided],
       ['Unassigned', stats.unassigned],
       ['Need transport', stats.needTransport]
