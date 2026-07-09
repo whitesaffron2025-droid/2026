@@ -1,4 +1,26 @@
 window.CampaignShare = {
+  buildPublicUrl() {
+    const u = window.CampaignUtils;
+    const base = `${window.location.origin}${window.location.pathname}`;
+    const params = new URLSearchParams();
+    const search = u.text(u.el('searchInput').value);
+    const assigner = u.el('assignerFilter').value;
+    const status = u.el('statusFilter').value;
+
+    params.set('public', 'true');
+    if (search) params.set('search', search);
+    if (assigner === 'unassigned') params.set('unassigned', 'true');
+    if (assigner && assigner !== 'all' && assigner !== 'unassigned') params.set('assigner', assigner);
+    if (status === 'unassigned') params.set('unassigned', 'true');
+
+    return `${base}?${params.toString()}`;
+  },
+  async copyPublicUrl() {
+    const url = this.buildPublicUrl();
+    await navigator.clipboard.writeText(url);
+    alert(`Public link copied:\n${url}`);
+    return url;
+  },
   currentUrl() {
     return window.location.href;
   },
