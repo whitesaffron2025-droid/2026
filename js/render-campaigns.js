@@ -15,6 +15,23 @@ window.CampaignRenderCampaigns = {
     if (row.vote_status === 'not-vote' && row.reach_status === 'reached') return ' class="not-vote-reached"';
     return '';
   },
+  getActiveFiltersHtml() {
+    const u = window.CampaignUtils;
+    const state = window.CampaignState;
+    const items = [];
+    if (state.publicView) items.push('Public safe view');
+    if (state.filters.search) items.push(`Search = ${state.filters.search}`);
+    if (state.filters.party !== 'all') items.push(`Party = ${state.filters.party}`);
+    if (state.filters.status !== 'all') items.push(`Outreach = ${state.filters.status}`);
+    if (state.filters.d2d !== 'all') items.push(`D2D = ${state.filters.d2d}`);
+    if (state.filters.callStatus !== 'all') items.push(`Call Status = ${state.filters.callStatus}`);
+    if (state.filters.callOutcome !== 'all') items.push(`Outcome = ${state.filters.callOutcome}`);
+    if (state.filters.assigner !== 'all') items.push(`Assigner = ${state.filters.assigner}`);
+    if (state.filters.house) items.push(`House = ${state.filters.house}`);
+    if (state.filters.id) items.push(`ID = ${state.filters.id}`);
+    if (!items.length) return '';
+    return `<div><b>Active Filters:</b> ${items.map(item => `<span class="badge">${u.text(item)}</span>`).join(' ')} <small>Showing ${u.fmt(state.filtered.length)} records</small></div>`;
+  },
   getRowHtml(row) {
     const u = window.CampaignUtils;
     const phone = u.text(row.phone);
@@ -62,6 +79,7 @@ window.CampaignRenderCampaigns = {
     return {
       head: this.getTableHeadHtml(),
       rows: this.getTableHtml(p.pageRows),
+      filters: this.getActiveFiltersHtml(),
       totalPages: p.totalPages,
       recordCount: window.CampaignState.filtered.length
     };
@@ -74,6 +92,7 @@ window.CampaignRenderCampaigns = {
     u.el('pageInfo').textContent = `Page ${state.page} of ${html.totalPages}`;
     u.el('prevPage').disabled = state.page <= 1;
     u.el('nextPage').disabled = state.page >= html.totalPages;
+    u.el('activeFilterSummary').innerHTML = html.filters;
     u.el('recordsHead').innerHTML = html.head;
     u.el('recordsBody').innerHTML = html.rows;
   },
