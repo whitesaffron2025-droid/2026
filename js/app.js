@@ -50,7 +50,6 @@
         const index = rows.findIndex(function (row) { return String(row.id) === String(id); });
         if (index >= 0) rows[index] = Object.assign({}, rows[index], updated);
         window.CampaignModal.close();
-        window.CampaignShell.renderAddressOptions();
         window.CampaignApp.render();
         alert('Saved.');
       } catch (error) {
@@ -60,22 +59,17 @@
 
     applySearch() {
       const searchInput = document.getElementById('searchInput');
-      const category = document.getElementById('searchCategory');
       window.CampaignState.search = searchInput ? searchInput.value.trim() : '';
-      window.CampaignState.searchCategory = category ? category.value : 'any';
       window.CampaignState.resetPage();
       this.render();
     },
 
     clearSearch() {
       const searchInput = document.getElementById('searchInput');
-      const category = document.getElementById('searchCategory');
       const address = document.getElementById('addressFilter');
       if (searchInput) searchInput.value = '';
-      if (category) category.value = 'any';
       if (address) address.value = 'all';
       window.CampaignState.search = '';
-      window.CampaignState.searchCategory = 'any';
       window.CampaignState.address = 'all';
       window.CampaignState.resetPage();
       this.render();
@@ -107,33 +101,29 @@
         }
       });
 
-      document.getElementById('addressFilter').addEventListener('input', function () {
-        window.CampaignState.address = this.value;
-        window.CampaignState.resetPage();
-        self.render();
-      });
-
-      document.getElementById('searchInput').addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
+      document.addEventListener('keydown', function (event) {
+        if (event.target && event.target.id === 'searchInput' && event.key === 'Enter') {
           event.preventDefault();
           self.applySearch();
         }
       });
 
-      document.getElementById('searchCategory').addEventListener('input', function () {
-        window.CampaignState.searchCategory = this.value;
-      });
-
-      document.getElementById('partyFilter').addEventListener('input', function () {
-        window.CampaignState.party = this.value;
-        window.CampaignState.resetPage();
-        self.render();
-      });
-
-      document.getElementById('pageSize').addEventListener('input', function () {
-        window.CampaignState.pageSize = Number(this.value || 20);
-        window.CampaignState.resetPage();
-        self.render();
+      document.addEventListener('input', function (event) {
+        if (event.target && event.target.id === 'addressFilter') {
+          window.CampaignState.address = event.target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (event.target && event.target.id === 'partyFilter') {
+          window.CampaignState.party = event.target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (event.target && event.target.id === 'pageSize') {
+          window.CampaignState.pageSize = Number(event.target.value || 20);
+          window.CampaignState.resetPage();
+          self.render();
+        }
       });
     },
 
@@ -145,17 +135,12 @@
       window.CampaignState.setSection(params.get('section') || 'dashboard');
       window.CampaignState.party = params.get('party') || 'all';
       window.CampaignState.address = params.get('address') || 'all';
-      window.CampaignState.searchCategory = params.get('searchBy') || 'any';
       window.CampaignState.search = params.get('q') || '';
-      document.getElementById('partyFilter').value = window.CampaignState.party;
-      document.getElementById('searchCategory').value = window.CampaignState.searchCategory;
-      document.getElementById('searchInput').value = window.CampaignState.search;
 
       try {
         window.CampaignShell.setStatus('Loading records...');
         const rows = await window.CampaignApi.fetchAllRows();
         window.CampaignState.setRows(rows);
-        window.CampaignShell.renderAddressOptions();
         window.CampaignShell.setStatus(`Connected • ${rows.length.toLocaleString()} records`);
         this.render();
       } catch (error) {
