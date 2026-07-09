@@ -41,7 +41,7 @@ window.CampaignApp = {
   },
   setupEvents() {
     const u = window.CampaignUtils;
-    ['searchInput', 'partyFilter', 'statusFilter', 'd2dFilter', 'assignerFilter', 'pageSize'].forEach(id => {
+    ['searchInput', 'partyFilter', 'statusFilter', 'd2dFilter', 'callStatusFilter', 'callOutcomeFilter', 'assignerFilter', 'pageSize'].forEach(id => {
       u.el(id).addEventListener('input', () => {
         window.CampaignState.resetPage();
         this.render();
