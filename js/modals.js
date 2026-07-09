@@ -111,3 +111,9 @@ window.CampaignModals = {
     if (dialog && dialog.open) dialog.close();
   }
 };
+
+Object.assign(window, {
+  openModal: row => window.CampaignModals.openRecord(row),
+  openRecord: row => window.CampaignModals.openRecord(row),
+  closeModal: () => window.CampaignModals.close()
+});
