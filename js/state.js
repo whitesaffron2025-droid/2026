@@ -1,29 +1,20 @@
 window.CampaignState = {
   rows: [],
-  filtered: [],
+  section: 'dashboard',
+  search: '',
+  party: 'all',
   page: 1,
-  pageSize: window.CampaignConfig.pageSize,
-  activeView: 'dashboard',
-  selectedIds: new Set(),
-  publicView: false,
-  urlFiltersApplied: false,
-  filters: {
-    search: '',
-    party: 'all',
-    status: 'all',
-    d2d: 'all',
-    callStatus: 'all',
-    callOutcome: 'all',
-    assigner: 'all',
-    house: '',
-    id: ''
-  },
+  pageSize: 20,
+
   setRows(rows) {
-    this.rows = rows || [];
+    this.rows = Array.isArray(rows) ? rows : [];
   },
-  setFiltered(rows) {
-    this.filtered = rows || [];
+
+  setSection(section) {
+    this.section = window.CampaignHelpers.validSection(section);
+    this.page = 1;
   },
+
   resetPage() {
     this.page = 1;
   }
