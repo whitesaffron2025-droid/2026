@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>2026 Campaign Dashboard</title>
   <meta name="description" content="Campaign management and voter outreach dashboard" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
   <header class="topbar">
@@ -15,26 +15,27 @@
   <main class="shell">
     <section class="hero"><div><p class="eyebrow">Real-time voter outreach tracking</p><h1>Monitor, manage, and optimize campaign progress.</h1><p class="hero-text">Track voters, phone calls, door-to-door visits, assignments, transport needs, turnout support, and campaign performance from one Supabase-powered dashboard.</p></div><div class="hero-actions"><button class="primary" id="refreshBtn">Refresh Data</button><button class="secondary" id="exportBtn">Export CSV</button><button class="secondary" id="shareBtn">Copy Public Link</button></div></section>
     <section class="toolbar" aria-label="Filters"><label>Search<input id="searchInput" type="search" placeholder="Name, ID, phone, house…" autocomplete="off" /></label><label>Party<select id="partyFilter"><option value="all">All parties</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select></label><label>Outreach<select id="statusFilter"><option value="all">All status</option><option value="reached">Reached</option><option value="not-reached">Not Reached</option><option value="need-call">Need call</option><option value="called">Called</option><option value="will-vote">Will vote</option><option value="not-vote">Not vote</option><option value="not-decided">Not decided</option><option value="not-visited">Not visited</option><option value="need-transport">Need transport</option><option value="unassigned">Unassigned</option></select></label><label>D2D<select id="d2dFilter"><option value="all">All D2D</option><option value="reach">Reached / Visited</option><option value="not-visited">Not Visited</option><option value="not-home">Not Home</option><option value="live-in-another-place">Live in Another Place</option></select></label><label>Call Status<select id="callStatusFilter"><option value="all">All Calls</option><option value="need-call">Need Call</option><option value="called">Called</option><option value="busy">Busy</option><option value="switched-off">Switched Off</option><option value="not-answer">Not Answer</option><option value="disconnected">Disconnected</option><option value="wrong-number">Wrong Number</option><option value="out-of-coverage">Out of Coverage</option><option value="out-of-range">Out of Range</option><option value="no-phone">No Phone</option></select></label><label>Outcome<select id="callOutcomeFilter"><option value="all">All Outcomes</option><option value="promised-to-vote">Promised to Vote</option><option value="undecided">Undecided</option><option value="will-not-vote">Will Not Vote</option><option value="callback">Callback</option><option value="no-answer">No Answer</option></select></label><label>Assigner<select id="assignerFilter"><option value="all">All assigners</option><option value="unassigned">Unassigned</option></select></label><label>Page size<select id="pageSize"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label></section>
-    <section id="dashboardView" class="view active"><div class="kpi-grid" id="kpiGrid"></div><div class="grid-two"><article class="panel"><div class="panel-head"><h2>Campaign Progress</h2><span id="lastUpdated">—</span></div><div id="progressBars" class="progress-list"></div></article><article class="panel"><div class="panel-head"><h2>Action Priorities</h2><span>Today</span></div><div id="priorityList" class="priority-list"></div></article></div></section>
-    <section id="campaignsView" class="view"><article class="panel"><div class="panel-head"><h2 id="recordsTitle">Voter Records</h2><span id="recordCount">0 records</span></div><div class="table-wrap"><table><thead id="recordsHead"><tr><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Action</th></tr></thead><tbody id="recordsBody"></tbody></table></div><div class="pager"><button class="secondary" id="prevPage">Previous</button><span id="pageInfo">Page 1</span><button class="secondary" id="nextPage">Next</button></div></article></section>
+    <section id="dashboardView" class="view active"><div class="kpi-grid" id="kpiGrid"></div><div class="grid-two"><article class="panel"><div class="panel-head"><h2>Campaign Progress</h2><span id="lastUpdated">—</span></div><div id="progressBars" class="progress-list"></div></article><article class="panel"><div class="panel-head"><h2>Action Priorities</h2><span>Today</span></div><div id="priorityList" class="priority-list"></div></article></div><div class="chart-grid"><article class="panel"><h2>Vote Status</h2><canvas id="voteChart"></canvas></article><article class="panel"><h2>Call Status</h2><canvas id="callChart"></canvas></article><article class="panel"><h2>D2D Status</h2><canvas id="d2dChart"></canvas></article><article class="panel"><h2>Assigner Performance</h2><canvas id="assignerChart"></canvas></article></div></section>
+    <section id="campaignsView" class="view"><article class="panel"><div class="panel-head"><h2 id="recordsTitle">Voter Records</h2><span id="recordCount">0 records</span></div><div id="activeFilterSummary" class="filter-summary"></div><div class="table-wrap"><table><thead id="recordsHead"><tr><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Action</th></tr></thead><tbody id="recordsBody"></tbody></table></div><div class="pager"><button class="secondary" id="prevPage">Previous</button><span id="pageInfo">Page 1</span><button class="secondary" id="nextPage">Next</button></div></article></section>
     <section id="analyticsView" class="view"><div class="grid-two"><article class="panel"><h2>Party Performance</h2><div id="partyAnalytics" class="analytics-list"></div></article><article class="panel"><h2>Insights</h2><div id="insightsList" class="insight-list"></div></article></div></section>
     <section id="reportsView" class="view"><article class="panel"><div class="panel-head"><h2>Reports</h2><button class="primary" id="copyReportBtn">Copy Summary</button></div><pre id="reportOutput" class="report-box"></pre></article></section>
   </main>
   <dialog id="editDialog" class="modal"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="js/config.js?v=5"></script>
-  <script src="js/state.js?v=5"></script>
-  <script src="js/utils.js?v=5"></script>
-  <script src="js/api.js?v=5"></script>
-  <script src="js/filters.js?v=5"></script>
-  <script src="js/metrics.js?v=5"></script>
-  <script src="js/charts.js?v=5"></script>
-  <script src="js/render-dashboard.js?v=5"></script>
-  <script src="js/render-campaigns.js?v=5"></script>
-  <script src="js/render-analytics.js?v=5"></script>
-  <script src="js/actions.js?v=5"></script>
-  <script src="js/share.js?v=5"></script>
-  <script src="js/modals.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/state.js?v=6"></script>
+  <script src="js/utils.js?v=6"></script>
+  <script src="js/api.js?v=6"></script>
+  <script src="js/filters.js?v=6"></script>
+  <script src="js/metrics.js?v=6"></script>
+  <script src="js/charts.js?v=6"></script>
+  <script src="js/render-dashboard.js?v=6"></script>
+  <script src="js/render-campaigns.js?v=6"></script>
+  <script src="js/render-analytics.js?v=6"></script>
+  <script src="js/actions.js?v=6"></script>
+  <script src="js/share.js?v=6"></script>
+  <script src="js/modals.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>
