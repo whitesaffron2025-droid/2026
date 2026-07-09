@@ -9,8 +9,19 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div id="app"></div>
-  <dialog id="editDialog"></dialog>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Home"><span class="brand-mark">2026</span><span><strong>Campaign Dashboard</strong><small id="connectionStatus">Connecting…</small></span></a>
+    <nav class="nav" aria-label="Primary navigation"><button class="nav-btn active" data-view="dashboard">Dashboard</button><button class="nav-btn" data-view="campaigns">Campaigns</button><button class="nav-btn" data-view="analytics">Analytics</button><button class="nav-btn" data-view="reports">Reports</button></nav>
+  </header>
+  <main class="shell">
+    <section class="hero"><div><p class="eyebrow">Real-time voter outreach tracking</p><h1>Monitor, manage, and optimize campaign progress.</h1><p class="hero-text">Track voters, phone calls, door-to-door visits, assignments, transport needs, turnout support, and campaign performance from one Supabase-powered dashboard.</p></div><div class="hero-actions"><button class="primary" id="refreshBtn">Refresh Data</button><button class="secondary" id="exportBtn">Export CSV</button></div></section>
+    <section class="toolbar" aria-label="Filters"><label>Search<input id="searchInput" type="search" placeholder="Name, ID, phone, house…" autocomplete="off" /></label><label>Party<select id="partyFilter"><option value="all">All parties</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select></label><label>Outreach<select id="statusFilter"><option value="all">All status</option><option value="need-call">Need call</option><option value="called">Called</option><option value="will-vote">Will vote</option><option value="not-vote">Not vote</option><option value="not-decided">Not decided</option><option value="not-visited">Not visited</option><option value="need-transport">Need transport</option><option value="unassigned">Unassigned</option></select></label><label>Page size<select id="pageSize"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label></section>
+    <section id="dashboardView" class="view active"><div class="kpi-grid" id="kpiGrid"></div><div class="grid-two"><article class="panel"><div class="panel-head"><h2>Campaign Progress</h2><span id="lastUpdated">—</span></div><div id="progressBars" class="progress-list"></div></article><article class="panel"><div class="panel-head"><h2>Action Priorities</h2><span>Today</span></div><div id="priorityList" class="priority-list"></div></article></div></section>
+    <section id="campaignsView" class="view"><article class="panel"><div class="panel-head"><h2>Voter Records</h2><span id="recordCount">0 records</span></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Action</th></tr></thead><tbody id="recordsBody"></tbody></table></div><div class="pager"><button class="secondary" id="prevPage">Previous</button><span id="pageInfo">Page 1</span><button class="secondary" id="nextPage">Next</button></div></article></section>
+    <section id="analyticsView" class="view"><div class="grid-two"><article class="panel"><h2>Party Performance</h2><div id="partyAnalytics" class="analytics-list"></div></article><article class="panel"><h2>Insights</h2><div id="insightsList" class="insight-list"></div></article></div></section>
+    <section id="reportsView" class="view"><article class="panel"><div class="panel-head"><h2>Reports</h2><button class="primary" id="copyReportBtn">Copy Summary</button></div><pre id="reportOutput" class="report-box"></pre></article></section>
+  </main>
+  <dialog id="editDialog" class="modal"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
