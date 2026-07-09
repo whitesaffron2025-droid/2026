@@ -129,3 +129,11 @@ window.CampaignActions = {
     navigator.clipboard.writeText(report);
   }
 };
+
+Object.assign(window, {
+  updateRecord: (...args) => window.CampaignApi.updateRecord(...args),
+  saveRecord: (...args) => window.CampaignActions.saveRecord(...args),
+  bulkUpdateStatus: (...args) => window.CampaignActions.bulkUpdate(...args),
+  exportCampaignData: () => window.CampaignActions.exportData(),
+  exportSelectedRecords: () => window.CampaignActions.exportSelected()
+});
