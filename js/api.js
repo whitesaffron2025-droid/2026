@@ -56,5 +56,38 @@ window.CampaignApi = {
       throw new Error(`Save failed ${response.status}: ${await response.text()}`);
     }
     return response.json();
+  },
+  async bulkUpdate(ids, patch) {
+    if (!ids.length) return [];
+    const cfg = window.CampaignConfig;
+    const cleanPatch = this.normalizePatch({ ...patch, election_review_updated_at: new Date().toISOString() });
+    const url = `${cfg.supabaseUrl}/rest/v1/${encodeURIComponent(cfg.tableName)}?id=in.(${ids.map(id => encodeURIComponent(id)).join(',')})`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        apikey: cfg.supabaseKey,
+        Authorization: `Bearer ${cfg.supabaseKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation'
+      },
+      body: JSON.stringify(cleanPatch)
+    });
+    if (!response.ok) throw new Error(`Bulk update failed ${response.status}: ${await response.text()}`);
+    return response.json();
+  },
+  async bulkDelete(ids) {
+    if (!ids.length) return [];
+    const cfg = window.CampaignConfig;
+    const url = `${cfg.supabaseUrl}/rest/v1/${encodeURIComponent(cfg.tableName)}?id=in.(${ids.map(id => encodeURIComponent(id)).join(',')})`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        apikey: cfg.supabaseKey,
+        Authorization: `Bearer ${cfg.supabaseKey}`,
+        Prefer: 'return=representation'
+      }
+    });
+    if (!response.ok) throw new Error(`Bulk delete failed ${response.status}: ${await response.text()}`);
+    return response.json();
   }
 };
