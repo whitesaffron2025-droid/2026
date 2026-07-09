@@ -5,10 +5,12 @@ window.CampaignShare = {
     const params = new URLSearchParams();
     const search = u.text(u.el('searchInput').value);
     const assigner = u.el('assignerFilter').value;
+    const d2d = u.el('d2dFilter').value;
     const status = u.el('statusFilter').value;
 
     params.set('public', 'true');
     if (search) params.set('search', search);
+    if (d2d && d2d !== 'all') params.set('d2d', d2d);
     if (assigner === 'unassigned') params.set('unassigned', 'true');
     if (assigner && assigner !== 'all' && assigner !== 'unassigned') params.set('assigner', assigner);
     if (status === 'unassigned') params.set('unassigned', 'true');
