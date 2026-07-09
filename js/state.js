@@ -12,6 +12,8 @@ window.CampaignState = {
     party: 'all',
     status: 'all',
     d2d: 'all',
+    callStatus: 'all',
+    callOutcome: 'all',
     assigner: 'all',
     house: '',
     id: ''
