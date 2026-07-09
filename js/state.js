@@ -3,6 +3,7 @@ window.CampaignState = {
   section: 'dashboard',
   search: '',
   searchCategory: 'any',
+  address: 'all',
   party: 'all',
   page: 1,
   pageSize: 20,
