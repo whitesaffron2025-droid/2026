@@ -9,7 +9,7 @@
     return {
       dashboard: window.CampaignDashboard,
       residents: { render: function () { window.CampaignTable.render(window.CampaignResidents.rows(), window.CampaignSections.title('residents')); } },
-      assign: { render: function () { window.CampaignTable.render(window.CampaignAssign.rows(), window.CampaignSections.title('assign')); } },
+      assign: { render: function () { window.CampaignAssign.render(); } },
       calls: { render: function () { window.CampaignTable.render(window.CampaignCalls.rows(), window.CampaignSections.title('calls')); } },
       votes: { render: function () { window.CampaignTable.render(window.CampaignVotes.rows(), window.CampaignSections.title('votes')); } },
       visits: { render: function () { window.CampaignTable.render(window.CampaignVisits.rows(), window.CampaignSections.title('visits')); } },
@@ -57,12 +57,42 @@
       }
     },
 
+    applySearch() {
+      const searchInput = document.getElementById('searchInput');
+      const category = document.getElementById('searchCategory');
+      window.CampaignState.search = searchInput ? searchInput.value.trim() : '';
+      window.CampaignState.searchCategory = category ? category.value : 'any';
+      window.CampaignState.resetPage();
+      this.render();
+    },
+
+    clearSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const category = document.getElementById('searchCategory');
+      if (searchInput) searchInput.value = '';
+      if (category) category.value = 'any';
+      window.CampaignState.search = '';
+      window.CampaignState.searchCategory = 'any';
+      window.CampaignState.resetPage();
+      this.render();
+    },
+
     bindEvents() {
       const self = this;
       document.addEventListener('click', function (event) {
         const sectionButton = event.target.closest('[data-section]');
         if (sectionButton) {
           self.setSection(sectionButton.dataset.section);
+          return;
+        }
+
+        if (event.target.closest('#searchBtn')) {
+          self.applySearch();
+          return;
+        }
+
+        if (event.target.closest('#clearSearchBtn')) {
+          self.clearSearch();
           return;
         }
 
@@ -73,10 +103,15 @@
         }
       });
 
-      document.getElementById('searchInput').addEventListener('input', function () {
-        window.CampaignState.search = this.value.trim();
-        window.CampaignState.resetPage();
-        self.render();
+      document.getElementById('searchInput').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          self.applySearch();
+        }
+      });
+
+      document.getElementById('searchCategory').addEventListener('input', function () {
+        window.CampaignState.searchCategory = this.value;
       });
 
       document.getElementById('partyFilter').addEventListener('input', function () {
@@ -99,7 +134,11 @@
       const params = new URLSearchParams(window.location.search);
       window.CampaignState.setSection(params.get('section') || 'dashboard');
       window.CampaignState.party = params.get('party') || 'all';
+      window.CampaignState.searchCategory = params.get('searchBy') || 'any';
+      window.CampaignState.search = params.get('q') || '';
       document.getElementById('partyFilter').value = window.CampaignState.party;
+      document.getElementById('searchCategory').value = window.CampaignState.searchCategory;
+      document.getElementById('searchInput').value = window.CampaignState.search;
 
       try {
         window.CampaignShell.setStatus('Loading records...');
