@@ -82,3 +82,9 @@ window.CampaignMetrics = {
     return Object.values(groups).sort((a, b) => b.called - a.called || b.total - a.total || a.name.localeCompare(b.name));
   }
 };
+
+Object.assign(window, {
+  calculateStats: (...args) => window.CampaignMetrics.calculate(...args),
+  getAssignerStats: (...args) => window.CampaignMetrics.assignerStats(...args),
+  getCallAgentStats: (...args) => window.CampaignMetrics.callAgentStats(...args)
+});
