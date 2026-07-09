@@ -2,6 +2,7 @@ window.CampaignState = {
   rows: [],
   section: 'dashboard',
   search: '',
+  searchCategory: 'any',
   party: 'all',
   page: 1,
   pageSize: 20,
