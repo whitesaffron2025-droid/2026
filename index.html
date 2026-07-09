@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>2026 Campaign Dashboard</title>
   <meta name="description" content="Campaign management and voter outreach dashboard" />
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
 </head>
 <body>
   <header id="dashboard-header" class="topbar">
     <a class="brand" href="./" aria-label="Home"><span class="brand-mark">2026</span><span><strong>Campaign Dashboard</strong><small id="connectionStatus">Connecting…</small></span></a>
-    <nav class="nav" aria-label="Primary navigation"><button class="nav-btn active" data-view="dashboard">Dashboard</button><button class="nav-btn" data-view="campaigns">Campaigns</button><button class="nav-btn" data-view="analytics">Analytics</button><button class="nav-btn" data-view="reports">Reports</button></nav>
+    <nav class="nav workflow-nav" aria-label="Workflow navigation"><button class="nav-btn workflow-btn active" data-workflow="dashboard">Dashboard</button><button class="nav-btn workflow-btn" data-workflow="residents">Residents</button><button class="nav-btn workflow-btn" data-workflow="assign">Assign</button><button class="nav-btn workflow-btn" data-workflow="calls">Calls</button><button class="nav-btn workflow-btn" data-workflow="votes">Votes</button><button class="nav-btn workflow-btn" data-workflow="visits">Visits</button><button class="nav-btn workflow-btn" data-workflow="transport">Transport</button><button class="nav-btn workflow-btn" data-workflow="analytics">Analytics</button><button class="nav-btn workflow-btn" data-workflow="reports">Reports</button></nav>
   </header>
   <main class="shell">
     <section class="hero"><div><p class="eyebrow">Real-time voter outreach tracking</p><h1>Monitor, manage, and optimize campaign progress.</h1><p class="hero-text">Track voters, phone calls, door-to-door visits, assignments, transport needs, turnout support, and campaign performance from one Supabase-powered dashboard.</p></div><div class="hero-actions"><button class="primary" id="refreshBtn">Refresh Data</button><button class="secondary" id="exportBtn">Export CSV</button><button class="secondary" id="shareBtn">Copy Public Link</button><button class="secondary" id="printPdfBtn">Print / PDF</button></div></section>
@@ -23,20 +23,20 @@
   <dialog id="editDialog" class="modal"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="js/config.js?v=12"></script>
-  <script src="js/state.js?v=12"></script>
-  <script src="js/utils.js?v=12"></script>
-  <script src="js/api.js?v=12"></script>
-  <script src="js/filters.js?v=12"></script>
-  <script src="js/metrics.js?v=12"></script>
-  <script src="js/charts.js?v=12"></script>
-  <script src="js/render-dashboard.js?v=12"></script>
-  <script src="js/render-campaigns.js?v=12"></script>
-  <script src="js/render-analytics.js?v=12"></script>
-  <script src="js/actions.js?v=12"></script>
-  <script src="js/share.js?v=12"></script>
-  <script src="js/modals.js?v=12"></script>
-  <script src="js/app.js?v=12"></script>
-  <script src="js/workflow-sections.js?v=12"></script>
+  <script src="js/config.js?v=13"></script>
+  <script src="js/state.js?v=13"></script>
+  <script src="js/utils.js?v=13"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/filters.js?v=13"></script>
+  <script src="js/metrics.js?v=13"></script>
+  <script src="js/charts.js?v=13"></script>
+  <script src="js/render-dashboard.js?v=13"></script>
+  <script src="js/render-campaigns.js?v=13"></script>
+  <script src="js/render-analytics.js?v=13"></script>
+  <script src="js/actions.js?v=13"></script>
+  <script src="js/share.js?v=13"></script>
+  <script src="js/modals.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
+  <script src="js/workflow-sections.js?v=13"></script>
 </body>
 </html>
