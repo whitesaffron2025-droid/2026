@@ -28,8 +28,19 @@ window.CampaignApi = {
     }
     return all;
   },
+  normalizePatch(patch) {
+    const clean = { ...patch };
+    if (clean.vote_status === 'will-vote') {
+      clean.reach_status = 'reached';
+    }
+    if (Object.prototype.hasOwnProperty.call(clean, 'vote_assigned_by') && !clean.vote_assigned_by) {
+      clean.vote_assigned_at = null;
+    }
+    return clean;
+  },
   async updateRecord(id, patch) {
     const cfg = window.CampaignConfig;
+    const cleanPatch = this.normalizePatch(patch);
     const url = `${cfg.supabaseUrl}/rest/v1/${encodeURIComponent(cfg.tableName)}?id=eq.${encodeURIComponent(id)}`;
     const response = await fetch(url, {
       method: 'PATCH',
@@ -39,7 +50,7 @@ window.CampaignApi = {
         'Content-Type': 'application/json',
         Prefer: 'return=representation'
       },
-      body: JSON.stringify(patch)
+      body: JSON.stringify(cleanPatch)
     });
     if (!response.ok) {
       throw new Error(`Save failed ${response.status}: ${await response.text()}`);
