@@ -4,6 +4,17 @@ window.CampaignRenderCampaigns = {
     const photo = u.text(row.photo_url) || u.text(row.image_key);
     return photo ? `<img class="avatar" src="${photo}" alt="">` : '<span class="avatar"></span>';
   },
+  getReachBadgeHtml(row) {
+    if (row.vote_status === 'will-vote' && row.reach_status === 'reached') {
+      return '<span class="badge ok badge-reached">Reached Auto</span>';
+    }
+    return '';
+  },
+  getRowClass(row) {
+    if (row.vote_status === 'will-vote' && row.reach_status === 'reached') return ' class="will-vote-reached"';
+    if (row.vote_status === 'not-vote' && row.reach_status === 'reached') return ' class="not-vote-reached"';
+    return '';
+  },
   getRowHtml(row) {
     const u = window.CampaignUtils;
     const phone = u.text(row.phone);
@@ -16,8 +27,8 @@ window.CampaignRenderCampaigns = {
         <td>${u.text(row.house) || u.text(row.lives_in) || '-'}</td>
       </tr>`;
     }
-    return `<tr>
-      <td><div class="person">${this.getPhotoHtml(row)}<div><b>${u.text(row.name) || 'No name'}</b><br><small>${u.text(row.national_id) || 'No ID'}</small></div></div></td>
+    return `<tr${this.getRowClass(row)}>
+      <td><div class="person">${this.getPhotoHtml(row)}<div><b>${u.text(row.name) || 'No name'}</b><br><small>${u.text(row.national_id) || 'No ID'} ${this.getReachBadgeHtml(row)}</small></div></div></td>
       <td>${u.text(row.house) || '-'}</td>
       <td>${phone ? `<a href="tel:${phone}">${phone}</a>` : '-'}</td>
       <td>${u.badge(row.party)}</td>
@@ -25,7 +36,7 @@ window.CampaignRenderCampaigns = {
       <td>${u.badge(row.phone_status)}</td>
       <td>${u.badge(row.d2d_status)}</td>
       <td>${u.text(row.vote_assigned_by) || '<span class="badge warn">Unassigned</span>'}</td>
-      <td><button class="primary" data-edit-id="${Number(row.id)}">View</button></td>
+      <td><button class="primary" data-edit-id="${Number(row.id)}">View/Edit</button></td>
     </tr>`;
   },
   getTableHeadHtml() {
