@@ -1,6 +1,8 @@
 window.CampaignActions = {
   buildUpdatePatch(form) {
     const data = Object.fromEntries(new FormData(form).entries());
+    const callAttempts = data.call_attempts === '' ? 0 : Number(data.call_attempts || 0);
+    const callDuration = data.call_duration === '' ? null : Number(data.call_duration || 0);
     const patch = {
       vote_status: data.vote_status || 'not-decided',
       phone_status: data.phone_status || 'need-call',
@@ -11,10 +13,28 @@ window.CampaignActions = {
       vote_assigned_by: data.vote_assigned_by.trim() || null,
       living_place: data.living_place.trim() || null,
       remarks: data.remarks.trim() || null,
+      call_attempts: callAttempts,
+      call_duration: callDuration,
+      call_notes: data.call_notes.trim() || null,
+      callback_scheduled_at: data.callback_scheduled_at || null,
+      call_center_agent: data.call_center_agent.trim() || null,
+      call_outcome: data.call_outcome || null,
+      sms_sent: data.sms_sent === 'on',
+      email_sent: data.email_sent === 'on',
       election_review_updated_at: new Date().toISOString()
     };
 
     if (patch.vote_status === 'will-vote') {
+      patch.reach_status = 'reached';
+    }
+
+    if (patch.phone_status && patch.phone_status !== 'need-call') {
+      patch.call_attempts = Math.max(callAttempts, 1);
+      patch.last_call_at = new Date().toISOString();
+    }
+
+    if (patch.phone_status === 'called' && patch.call_outcome === 'promised-to-vote') {
+      patch.vote_status = 'will-vote';
       patch.reach_status = 'reached';
     }
 
@@ -41,7 +61,7 @@ window.CampaignActions = {
     const state = window.CampaignState;
     const u = window.CampaignUtils;
     const rows = state.filtered.length ? state.filtered : state.rows;
-    const cols = ['id', 'name', 'national_id', 'house', 'phone', 'party', 'vote_status', 'phone_status', 'd2d_status', 'reach_status', 'vote_assigned_by'];
+    const cols = ['id', 'name', 'national_id', 'house', 'phone', 'party', 'vote_status', 'phone_status', 'd2d_status', 'reach_status', 'vote_assigned_by', 'call_attempts', 'last_call_at', 'call_center_agent', 'call_outcome'];
     const csv = [cols.join(',')].concat(rows.map(row => cols.map(col => u.escapeCsv(row[col])).join(','))).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
