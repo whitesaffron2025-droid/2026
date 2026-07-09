@@ -25,33 +25,8 @@ window.CampaignShell = {
           <div>
             <p class="eyebrow">Modern workflow</p>
             <h1 id="pageTitle">Campaign Dashboard</h1>
-            <p class="hero-text">Select address, search by name/ID/mobile, filter and update residents from section-based work queues.</p>
+            <p class="hero-text">Each workflow section has its own filters and update logic.</p>
           </div>
-        </section>
-
-        <section class="toolbar search-panel" aria-label="Filters">
-          <label>Address
-            <select id="addressFilter"><option value="all">All Addresses</option></select>
-          </label>
-          <label>Search By
-            <select id="searchCategory">
-              <option value="any">Any field</option>
-              <option value="name">Name</option>
-              <option value="id">ID</option>
-              <option value="mobile">Mobile</option>
-            </select>
-          </label>
-          <label class="search-wide">Search
-            <input id="searchInput" type="search" placeholder="Type search text" autocomplete="off">
-          </label>
-          <button class="primary search-button" id="searchBtn">Search</button>
-          <button class="secondary search-button" id="clearSearchBtn">Clear</button>
-          <label>Party
-            <select id="partyFilter"><option value="all">All</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select>
-          </label>
-          <label>Page size
-            <select id="pageSize"><option value="20">20</option><option value="50">50</option></select>
-          </label>
         </section>
 
         <section id="dashboard"></section>
