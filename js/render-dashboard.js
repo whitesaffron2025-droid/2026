@@ -1,46 +1,57 @@
 window.CampaignRenderDashboard = {
-  renderKpis() {
+  getStatsCardsHtml(stats) {
     const u = window.CampaignUtils;
-    const m = window.CampaignMetrics.calculate();
     const items = [
-      ['Total Records', m.total, 'All voters in table'],
-      ['Reached', m.reached, `${u.pct(m.reached, m.total)}% outreach`],
-      ['Called', m.called, `${u.pct(m.called, m.total)}% phone`],
-      ['Will Vote', m.willVote, `${u.pct(m.willVote, m.total)}% support`],
-      ['Need Call', m.needCall, `${u.pct(m.needCall, m.total)}% pending`],
-      ['Assigned', m.assigned, `${u.fmt(m.unassigned)} unassigned`]
+      ['Total Records', stats.total, 'All voters in table'],
+      ['Reached', stats.reached, `${u.pct(stats.reached, stats.total)}% outreach`],
+      ['Called', stats.called, `${u.pct(stats.called, stats.total)}% phone`],
+      ['Will Vote', stats.willVote, `${u.pct(stats.willVote, stats.total)}% support`],
+      ['Need Call', stats.needCall, `${u.pct(stats.needCall, stats.total)}% pending`],
+      ['Assigned', stats.assigned, `${u.fmt(stats.unassigned)} unassigned`]
     ];
-    u.el('kpiGrid').innerHTML = items.map(([title, value, sub]) => `<article class="kpi"><span>${title}</span><strong>${u.fmt(value)}</strong><small>${sub}</small></article>`).join('');
+    return items.map(([title, value, sub]) => `<article class="kpi"><span>${title}</span><strong>${u.fmt(value)}</strong><small>${sub}</small></article>`).join('');
   },
-  renderProgress() {
+  getProgressHtml(stats) {
     const u = window.CampaignUtils;
-    const m = window.CampaignMetrics.calculate();
     const items = [
-      ['Reach rate', m.reached, m.total],
-      ['Call rate', m.called, m.total],
-      ['Will vote rate', m.willVote, m.total],
-      ['D2D reach', m.d2d, m.total],
-      ['Guaranteed', m.guaranteed, m.total]
+      ['Reach rate', stats.reached, stats.total],
+      ['Call rate', stats.called, stats.total],
+      ['Will vote rate', stats.willVote, stats.total],
+      ['D2D reach', stats.d2d, stats.total],
+      ['Guaranteed', stats.guaranteed, stats.total]
     ];
-    u.el('progressBars').innerHTML = items.map(([title, value, total]) => {
+    return items.map(([title, value, total]) => {
       const p = u.pct(value, total);
       return `<div class="progress-item"><div class="progress-top"><span>${title}</span><span>${p}%</span></div><div class="bar"><i style="width:${Math.min(Number(p), 100)}%"></i></div><small>${u.fmt(value)} of ${u.fmt(total)}</small></div>`;
     }).join('');
   },
-  renderPriorities() {
+  getPrioritiesHtml(stats) {
     const u = window.CampaignUtils;
-    const m = window.CampaignMetrics.calculate();
     const items = [
-      ['Need call', m.needCall],
-      ['Not decided', m.notDecided],
-      ['Unassigned', m.unassigned],
-      ['Need transport', m.needTransport]
+      ['Need call', stats.needCall],
+      ['Not decided', stats.notDecided],
+      ['Unassigned', stats.unassigned],
+      ['Need transport', stats.needTransport]
     ];
-    u.el('priorityList').innerHTML = items.map(([title, value]) => `<div class="priority"><b>${title}</b><strong>${u.fmt(value)}</strong></div>`).join('');
+    return items.map(([title, value]) => `<div class="priority"><b>${title}</b><strong>${u.fmt(value)}</strong></div>`).join('');
+  },
+  getDashboardHtml(stats) {
+    return {
+      statsCards: this.getStatsCardsHtml(stats),
+      progress: this.getProgressHtml(stats),
+      priorities: this.getPrioritiesHtml(stats)
+    };
+  },
+  inject(html) {
+    const u = window.CampaignUtils;
+    u.el('kpiGrid').innerHTML = html.statsCards;
+    u.el('progressBars').innerHTML = html.progress;
+    u.el('priorityList').innerHTML = html.priorities;
   },
   render() {
-    this.renderKpis();
-    this.renderProgress();
-    this.renderPriorities();
+    const stats = window.CampaignMetrics.calculate();
+    const html = this.getDashboardHtml(stats);
+    this.inject(html);
+    return html;
   }
 };
