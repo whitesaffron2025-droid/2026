@@ -46,31 +46,42 @@ window.CampaignAssign = {
     `;
   },
 
+  structurePlaceholder() {
+    return `
+      <div class="structure-placeholder">
+        <strong>Assign data hidden while structure is being fixed.</strong>
+        <p>Layout preview: Photo | Name / ID | Address | Mobile | Assigned To | Remarks | Assign</p>
+      </div>
+    `;
+  },
+
   render() {
-    const h = window.CampaignHelpers;
     const rows = this.rows();
     const assigners = this.assigners();
     const state = window.CampaignState;
+    const shownRows = state.structureMode ? [] : rows;
     const start = (state.page - 1) * state.pageSize;
-    const pageRows = rows.slice(start, start + state.pageSize);
-    const totalPages = Math.max(1, Math.ceil(rows.length / state.pageSize));
+    const pageRows = shownRows.slice(start, start + state.pageSize);
+    const totalPages = Math.max(1, Math.ceil(shownRows.length / state.pageSize));
 
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('content').innerHTML = `
       <article class="panel">
-        <div class="panel-head"><h2>Assign Voters</h2><span>${rows.length.toLocaleString()} records</span></div>
+        <div class="panel-head"><h2>Assign Voters</h2><span>${state.structureMode ? 'Structure mode' : rows.length.toLocaleString() + ' records'}</span></div>
         ${this.filterCard(assigners)}
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Photo</th><th>Name / ID</th><th>Address</th><th>Mobile</th><th>Assigned To</th><th>Remarks</th><th>Action</th></tr></thead>
-            <tbody>${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="7">No assign records found.</td></tr>'}</tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button class="secondary" id="prevPage" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>
-          <span>Page ${state.page} of ${totalPages}</span>
-          <button class="secondary" id="nextPage" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
-        </div>
+        ${state.structureMode ? this.structurePlaceholder() : `
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Photo</th><th>Name / ID</th><th>Address</th><th>Mobile</th><th>Assigned To</th><th>Remarks</th><th>Action</th></tr></thead>
+              <tbody>${pageRows.map(this.rowHtml.bind(this)).join('') || '<tr><td colspan="7">No assign records found.</td></tr>'}</tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button class="secondary" id="prevPage" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>
+            <span>Page ${state.page} of ${totalPages}</span>
+            <button class="secondary" id="nextPage" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+          </div>
+        `}
       </article>
     `;
 
@@ -88,14 +99,15 @@ window.CampaignAssign = {
       window.CampaignApp.render();
     };
 
-    document.getElementById('prevPage').onclick = () => {
+    const prev = document.getElementById('prevPage');
+    const next = document.getElementById('nextPage');
+    if (prev) prev.onclick = () => {
       if (state.page > 1) {
         state.page--;
         window.CampaignApp.render();
       }
     };
-
-    document.getElementById('nextPage').onclick = () => {
+    if (next) next.onclick = () => {
       if (state.page < totalPages) {
         state.page++;
         window.CampaignApp.render();
