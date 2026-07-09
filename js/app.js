@@ -60,9 +60,38 @@ window.CampaignApp = {
     u.el('refreshBtn').onclick = () => this.load();
     u.el('exportBtn').onclick = () => window.CampaignActions.exportData();
     u.el('shareBtn').onclick = () => window.CampaignShare.copyPublicUrl();
+    u.el('printPdfBtn').onclick = () => window.CampaignActions.printPdf();
     u.el('copyReportBtn').onclick = () => window.CampaignActions.copyReport();
+    u.el('printReportBtn').onclick = () => window.CampaignActions.printPdf();
+    u.el('buildReportBtn').onclick = () => window.CampaignRenderAnalytics.render();
+    u.el('bulkVoteBtn').onclick = () => window.CampaignActions.bulkUpdateVote();
+    u.el('bulkCallBtn').onclick = () => window.CampaignActions.bulkUpdateCall();
+    u.el('bulkD2DBtn').onclick = () => window.CampaignActions.bulkUpdateD2D();
+    u.el('bulkAssignBtn').onclick = () => window.CampaignActions.bulkAssign();
+    u.el('exportSelectedBtn').onclick = () => window.CampaignActions.exportSelected();
+    u.el('bulkDeleteBtn').onclick = () => window.CampaignActions.bulkDelete();
     document.addEventListener('change', event => {
       if (event.target && event.target.id === 'modalVoteStatus') window.CampaignModals.syncReachStatus();
+      const rowSelect = event.target.closest('.row-select');
+      if (rowSelect) {
+        const id = Number(rowSelect.dataset.selectId);
+        if (rowSelect.checked) window.CampaignState.selectedIds.add(id);
+        else window.CampaignState.selectedIds.delete(id);
+        window.CampaignRenderCampaigns.updateSelectionSummary();
+      }
+      if (event.target && event.target.id === 'selectAllRows') {
+        const checked = event.target.checked;
+        document.querySelectorAll('.row-select').forEach(input => {
+          const id = Number(input.dataset.selectId);
+          input.checked = checked;
+          if (checked) window.CampaignState.selectedIds.add(id);
+          else window.CampaignState.selectedIds.delete(id);
+        });
+        window.CampaignRenderCampaigns.updateSelectionSummary();
+      }
+      if (event.target && event.target.classList && event.target.classList.contains('report-field')) {
+        window.CampaignRenderAnalytics.render();
+      }
     });
     document.addEventListener('submit', async event => {
       if (event.target && event.target.id === 'editForm') {
