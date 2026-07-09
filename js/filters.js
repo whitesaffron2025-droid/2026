@@ -54,6 +54,10 @@ window.CampaignFilters = {
     state.setFiltered(filtered);
     return filtered;
   },
+  filterByD2D(records, status) {
+    if (!status || status === 'all') return records || [];
+    return (records || []).filter(row => row.d2d_status === status);
+  },
   applyUrlParams() {
     const state = window.CampaignState;
     const u = window.CampaignUtils;
@@ -82,3 +86,9 @@ window.CampaignFilters = {
     }
   }
 };
+
+Object.assign(window, {
+  applyFilters: () => window.CampaignFilters.apply(),
+  filterByD2D: (...args) => window.CampaignFilters.filterByD2D(...args),
+  applyUrlFilters: () => window.CampaignFilters.applyUrlParams()
+});
