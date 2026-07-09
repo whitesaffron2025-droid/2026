@@ -50,7 +50,7 @@
         const index = rows.findIndex(function (row) { return String(row.id) === String(id); });
         if (index >= 0) rows[index] = Object.assign({}, rows[index], updated);
         window.CampaignModal.close();
-        this.render();
+        window.CampaignApp.render();
         alert('Saved.');
       } catch (error) {
         alert(error.message || error);
