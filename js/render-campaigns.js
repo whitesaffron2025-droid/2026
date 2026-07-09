@@ -44,7 +44,9 @@ window.CampaignRenderCampaigns = {
         <td>${u.text(row.house) || u.text(row.lives_in) || '-'}</td>
       </tr>`;
     }
+    const checked = window.CampaignState.selectedIds.has(Number(row.id)) ? 'checked' : '';
     return `<tr${this.getRowClass(row)}>
+      <td><input type="checkbox" class="row-select" data-select-id="${Number(row.id)}" ${checked}></td>
       <td><div class="person">${this.getPhotoHtml(row)}<div><b>${u.text(row.name) || 'No name'}</b><br><small>${u.text(row.national_id) || 'No ID'} ${this.getReachBadgeHtml(row)}</small></div></div></td>
       <td>${u.text(row.house) || '-'}</td>
       <td>${phone ? `<a href="tel:${phone}">${phone}</a>` : '-'}</td>
@@ -60,10 +62,10 @@ window.CampaignRenderCampaigns = {
     if (window.CampaignState.publicView) {
       return '<tr><th>Image</th><th>Name</th><th>Phone</th><th>ID</th><th>House</th></tr>';
     }
-    return '<tr><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Action</th></tr>';
+    return '<tr><th><input type="checkbox" id="selectAllRows"></th><th>Name</th><th>House</th><th>Phone</th><th>Party</th><th>Vote</th><th>Call</th><th>D2D</th><th>Assign</th><th>Action</th></tr>';
   },
   getTableHtml(pageRows) {
-    const colspan = window.CampaignState.publicView ? 5 : 9;
+    const colspan = window.CampaignState.publicView ? 5 : 10;
     return pageRows.map(row => this.getRowHtml(row)).join('') || `<tr><td colspan="${colspan}">No records found.</td></tr>`;
   },
   getPaginationState() {
@@ -81,8 +83,20 @@ window.CampaignRenderCampaigns = {
       rows: this.getTableHtml(p.pageRows),
       filters: this.getActiveFiltersHtml(),
       totalPages: p.totalPages,
+      pageRows: p.pageRows,
       recordCount: window.CampaignState.filtered.length
     };
+  },
+  updateSelectionSummary(pageRows) {
+    const u = window.CampaignUtils;
+    const selectedCount = u.el('selectedCount');
+    if (selectedCount) selectedCount.textContent = `${u.fmt(window.CampaignState.selectedIds.size)} selected`;
+    const selectAll = document.getElementById('selectAllRows');
+    if (selectAll && pageRows) {
+      const ids = pageRows.map(row => Number(row.id));
+      selectAll.checked = ids.length > 0 && ids.every(id => window.CampaignState.selectedIds.has(id));
+      selectAll.indeterminate = ids.some(id => window.CampaignState.selectedIds.has(id)) && !selectAll.checked;
+    }
   },
   inject(html) {
     const state = window.CampaignState;
@@ -95,6 +109,7 @@ window.CampaignRenderCampaigns = {
     u.el('activeFilterSummary').innerHTML = html.filters;
     u.el('recordsHead').innerHTML = html.head;
     u.el('recordsBody').innerHTML = html.rows;
+    this.updateSelectionSummary(html.pageRows);
   },
   render() {
     const html = this.getCampaignsHtml();
