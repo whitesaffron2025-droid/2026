@@ -25,17 +25,19 @@ window.CampaignShell = {
           <div>
             <p class="eyebrow">Modern workflow</p>
             <h1 id="pageTitle">Campaign Dashboard</h1>
-            <p class="hero-text">Search, filter, update and manage every voter from clean section-based work queues.</p>
+            <p class="hero-text">Select address, search by name/ID/mobile, filter and update residents from section-based work queues.</p>
           </div>
         </section>
 
         <section class="toolbar search-panel" aria-label="Filters">
+          <label>Address
+            <select id="addressFilter"><option value="all">All Addresses</option></select>
+          </label>
           <label>Search By
             <select id="searchCategory">
               <option value="any">Any field</option>
               <option value="name">Name</option>
               <option value="id">ID</option>
-              <option value="address">Address</option>
               <option value="mobile">Mobile</option>
             </select>
           </label>
@@ -66,6 +68,24 @@ window.CampaignShell = {
     document.getElementById('nav').innerHTML = this.sections.map(function (section) {
       return `<button class="nav-btn ${state.section === section.id ? 'active' : ''}" data-section="${section.id}">${h.escape(section.label)}</button>`;
     }).join('');
+  },
+
+  renderAddressOptions() {
+    const h = window.CampaignHelpers;
+    const state = window.CampaignState;
+    const select = document.getElementById('addressFilter');
+    if (!select) return;
+    const counts = new Map();
+    state.rows.forEach(function (row) {
+      const address = h.text(row.house) || h.text(row.living_place) || h.text(row.lives_in);
+      if (!address) return;
+      counts.set(address, (counts.get(address) || 0) + 1);
+    });
+    const addresses = Array.from(counts.keys()).sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true }); });
+    select.innerHTML = `<option value="all">All Addresses (${state.rows.length.toLocaleString()})</option>` + addresses.map(function (address) {
+      return `<option value="${h.escape(address)}">${h.escape(address)} (${counts.get(address)})</option>`;
+    }).join('');
+    select.value = addresses.indexOf(state.address) >= 0 ? state.address : 'all';
   },
 
   setTitle(title) {
