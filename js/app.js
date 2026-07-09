@@ -1,22 +1,9 @@
 // js/app.js
 // Modular 2026 Campaign Manager
-// Orchestrates modules only. Supabase config/table remain in js/config.js.
+// Dashboard is separate. All work sections use the shared renderer.
 
 (function () {
   'use strict';
-
-  function sectionRenderer(section) {
-    return {
-      dashboard: window.CampaignDashboard,
-      residents: { render: function () { window.CampaignTable.render(window.CampaignResidents.rows(), window.CampaignSections.title('residents')); } },
-      assign: { render: function () { window.CampaignAssign.render(); } },
-      calls: { render: function () { window.CampaignTable.render(window.CampaignCalls.rows(), window.CampaignSections.title('calls')); } },
-      votes: { render: function () { window.CampaignTable.render(window.CampaignVotes.rows(), window.CampaignSections.title('votes')); } },
-      visits: { render: function () { window.CampaignTable.render(window.CampaignVisits.rows(), window.CampaignSections.title('visits')); } },
-      transport: { render: function () { window.CampaignTable.render(window.CampaignTransport.rows(), window.CampaignSections.title('transport')); } },
-      reports: window.CampaignReports
-    }[section] || window.CampaignDashboard;
-  }
 
   window.CampaignApp = {
     setSection(section) {
@@ -31,8 +18,13 @@
       const section = window.CampaignState.section;
       window.CampaignShell.renderNav();
       window.CampaignShell.setTitle(window.CampaignSections.title(section));
-      const renderer = sectionRenderer(section);
-      if (renderer && renderer.render) renderer.render();
+
+      if (section === 'dashboard') {
+        window.CampaignDashboard.render();
+        return;
+      }
+
+      window.CampaignWorkPageRenderer.render(section);
     },
 
     async saveEditor(event) {
@@ -66,17 +58,31 @@
 
     clearSearch() {
       const searchInput = document.getElementById('searchInput');
-      const address = document.getElementById('addressFilter');
       if (searchInput) searchInput.value = '';
-      if (address) address.value = 'all';
       window.CampaignState.search = '';
       window.CampaignState.address = 'all';
+      window.CampaignState.party = 'all';
+      window.CampaignState.voteStatus = 'all';
+      window.CampaignState.visitStatus = 'all';
+      window.CampaignState.transportStatus = 'all';
+      if (window.CampaignAssign) {
+        window.CampaignAssign.mode = 'unassigned';
+        window.CampaignAssign.assignee = 'all';
+      }
       window.CampaignState.resetPage();
+      this.render();
+    },
+
+    goToPage(page) {
+      const rows = window.CampaignSections.rowsFor(window.CampaignState.section);
+      const totalPages = Math.max(1, Math.ceil(rows.length / window.CampaignState.pageSize));
+      window.CampaignState.page = Math.min(Math.max(1, page), totalPages);
       this.render();
     },
 
     bindEvents() {
       const self = this;
+
       document.addEventListener('click', function (event) {
         const sectionButton = event.target.closest('[data-section]');
         if (sectionButton) {
@@ -84,13 +90,29 @@
           return;
         }
 
-        if (event.target.closest('#searchBtn')) {
-          self.applySearch();
+        if (event.target.closest('#clearSearchBtn')) {
+          self.clearSearch();
           return;
         }
 
-        if (event.target.closest('#clearSearchBtn')) {
-          self.clearSearch();
+        if (event.target.closest('#firstPage')) {
+          self.goToPage(1);
+          return;
+        }
+
+        if (event.target.closest('#prevPage')) {
+          self.goToPage(window.CampaignState.page - 1);
+          return;
+        }
+
+        if (event.target.closest('#nextPage')) {
+          self.goToPage(window.CampaignState.page + 1);
+          return;
+        }
+
+        if (event.target.closest('#lastPage')) {
+          const rows = window.CampaignSections.rowsFor(window.CampaignState.section);
+          self.goToPage(Math.ceil(rows.length / window.CampaignState.pageSize));
           return;
         }
 
@@ -109,18 +131,51 @@
       });
 
       document.addEventListener('input', function (event) {
-        if (event.target && event.target.id === 'addressFilter') {
-          window.CampaignState.address = event.target.value;
+        const target = event.target;
+        if (!target || !target.id) return;
+
+        if (target.id === 'searchInput') {
+          window.CampaignState.search = target.value.trim();
           window.CampaignState.resetPage();
           self.render();
         }
-        if (event.target && event.target.id === 'partyFilter') {
-          window.CampaignState.party = event.target.value;
+        if (target.id === 'addressFilter') {
+          window.CampaignState.address = target.value;
           window.CampaignState.resetPage();
           self.render();
         }
-        if (event.target && event.target.id === 'pageSize') {
-          window.CampaignState.pageSize = Number(event.target.value || 20);
+        if (target.id === 'partyFilter') {
+          window.CampaignState.party = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'assignMode') {
+          window.CampaignAssign.mode = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'assignerMode') {
+          window.CampaignAssign.assignee = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'voteStatusFilter') {
+          window.CampaignState.voteStatus = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'visitStatusFilter') {
+          window.CampaignState.visitStatus = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'transportStatusFilter') {
+          window.CampaignState.transportStatus = target.value;
+          window.CampaignState.resetPage();
+          self.render();
+        }
+        if (target.id === 'pageSize') {
+          window.CampaignState.pageSize = Number(target.value || 20);
           window.CampaignState.resetPage();
           self.render();
         }
