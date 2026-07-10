@@ -1,0 +1,73 @@
+WORKFLOW FIELD RULES
+
+RESIDENTS MASTER
+Editable:
+- Phone
+- Current Living Place
+
+Locked:
+- Name
+- National ID
+- Official Address
+- Sex
+- Age
+
+CALLS
+Editable:
+- Call Status
+- Call Outcome
+- Call Notes
+- Callback
+- Agent
+Locked:
+- Name
+- National ID
+- Official Address
+- Sex
+- Age
+- Phone
+- Current Living Place
+
+ASSIGN
+Editable:
+- Assignment Status
+- Assignee
+- Remarks
+Locked:
+- Identity fields
+- Phone
+- Current Living Place
+
+VOTES
+Editable:
+- Vote Status
+- Support Level
+- Remarks
+Locked:
+- Identity fields
+- Phone
+- Current Living Place
+
+VISITS
+Editable:
+- Current Living Place
+- Visit Status
+- Visit Notes
+Locked:
+- Name
+- National ID
+- Official Address
+- Sex
+- Age
+- Phone
+
+TRANSPORT
+Editable:
+- Transport Status
+- Driver
+- Pickup Time
+- Remarks
+Locked:
+- Identity fields
+- Phone
+- Current Living Place
