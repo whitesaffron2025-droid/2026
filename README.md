@@ -1,0 +1,1 @@
+Starter scaffold for 2026 Campaign Manager.
