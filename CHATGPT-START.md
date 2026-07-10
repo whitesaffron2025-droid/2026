@@ -1,27 +1,40 @@
-# 🤖 CHATGPT START INSTRUCTIONS
-
-## 🚨 READ THIS FIRST
-
-**I am not a coder.** I cannot write code, debug, or fix issues.
-
-**You must do everything yourself.**
 
 ---
 
-## 📋 YOUR WORKFLOW
+## 🚫 WHAT NOT TO DO
 
-### For EVERY issue I report:
-
-| Step | Action |
-|------|--------|
-| 1 | Read the file from GitHub |
-| 2 | Find the issue in the code |
-| 3 | Write the fix yourself |
-| 4 | Commit to GitHub |
-| 5 | Tell me: "Done. SHA: [hash]. Test now." |
-| 6 | Wait for my verification |
-| 7 | Repeat if needed |
+| Don't | Why |
+|-------|-----|
+| Read the whole file | Causes freeze |
+| Ask me for full code | I won't paste it |
+| Ask me to debug | I can't debug |
+| Search for extra issues | Only fix what I report |
+| Refactor code | Not needed |
+| Create new files | Not needed |
+| Clone the repo | Read from GitHub API |
 
 ---
 
-## 📝 MY ISSUE FORMAT
+## ✅ WHAT TO DO
+
+| Do | How |
+|----|-----|
+| Read ONLY lines I paste | From my message |
+| Find issues | In those lines only |
+| Write fixes | Code it yourself |
+| Commit | Use GitHub API |
+| Tell me | Short message |
+
+---
+
+## 📌 CURRENT FILE SHAS
+
+| File | SHA |
+|------|-----|
+| admin/js/app.js | `0b5ecd93` |
+| admin/index.html | `ea84f6c` |
+| admin/css/workflow-clean.css | `56b8636` |
+
+---
+
+## 📂 FILE STRUCTURE
