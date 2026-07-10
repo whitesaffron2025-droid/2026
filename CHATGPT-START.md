@@ -1,53 +1,37 @@
-# 🤖 CHATGPT AUTO-START INSTRUCTIONS
+// ============================================================
+// DASHBOARD RENDER
+// ============================================================
 
-## READ THIS FIRST BEFORE DOING ANYTHING
+function renderDashboard(config) {
+  const container = document.getElementById('dashboard-container');
+  if (!container) return;
 
----
+  let html = '';
+  
+  for (const section of Object.keys(config)) {
+    // ✅ FIXED: Null-safe stats mapping
+    const statItems = (config[section]?.stats || []).map(stat => {
+      return `
+        <div class="stat-item">
+          <span class="stat-label">${stat.label}</span>
+          <span class="stat-value">${stat.value || 0}</span>
+        </div>
+      `;
+    }).join('');
 
-## 🚀 PROJECT STATUS
+    html += `
+      <div class="dashboard-section">
+        <h3>${config[section].title || section}</h3>
+        <div class="stats-grid">${statItems || '<p>No stats available</p>'}</div>
+      </div>
+    `;
+  }
 
-**Site:** https://whitesaffron2025-droid.github.io/2026/
-**Status:** ✅ LIVE & WORKING
-**Host:** GitHub Pages
-**Backend:** Supabase (Auth + PostgreSQL)
-**Table:** public."2026"
-
----
-
-## 📋 CURRENT FILE SHAS
-
-| File | SHA |
-|------|-----|
-| admin/js/app.js | `8b2193c` |
-| admin/index.html | `ea84f6c` |
-| admin/css/workflow-clean.css | `56b8636` |
-| .nojekyll | `56b8636` |
-| _redirects | `56b8636` |
-
----
-
-## ⚡ WORKFLOW TO FOLLOW
-
-### One Issue at a Time
-
-1. **Read** - Read the affected file only
-2. **Audit** - Find the exact root cause
-3. **Fix** - Change only what's broken
-4. **Commit** - One commit per fix
-5. **Deploy** - Wait 2-3 min for GitHub Pages
-6. **Test** - User tests live and reports back
-7. **Report** - User provides pass/fail with details
-
-### Rules
-- ✅ ONE issue at a time
-- ✅ ONE commit per fix
-- ✅ Verify before next fix
-- ❌ NO unrelated changes
-- ❌ NO refactoring
-- ❌ NO multiple fixes
-
----
-
-## 🔧 WHEN USER REPORTS AN ISSUE
-
-They will paste:
+  container.innerHTML = html;
+  
+  // ✅ FIXED: Loading indicator now clears properly
+  const loader = document.getElementById('loading-indicator');
+  if (loader) {
+    loader.style.display = 'none';
+  }
+}
