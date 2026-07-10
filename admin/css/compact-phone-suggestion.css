@@ -1,0 +1,5 @@
+/* MODULE: Compact Phone Suggestion | VERSION: 1.0.0 */
+.phone-review-panel{display:none!important}
+.compact-phone-suggestion{grid-column:auto}
+.compact-phone-suggestion input{border-color:#f0c900!important;background:#fffdf0!important}
+.compact-phone-suggestion input:focus{border-color:#d7b400!important;box-shadow:0 0 0 3px rgba(240,201,0,.14)!important}
