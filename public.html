@@ -1,34 +1,34 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Residents · Public View</title>
-  <meta name="description" content="Public residents directory grouped by address" />
-  <link rel="stylesheet" href="assets/css/public.css?v=1" />
+  <meta name="description" content="Read-only residents directory grouped by official address">
+  <link rel="stylesheet" href="assets/css/public.css?v=2">
 </head>
 <body>
   <header class="public-header">
     <div>
       <p class="eyebrow">2026 Campaign Manager</p>
       <h1>Residents</h1>
-      <p class="subtitle">Public directory grouped by address</p>
+      <p class="subtitle">Read-only public gallery grouped by official address</p>
     </div>
-    <span id="residentCount" class="count-pill">0 residents</span>
+    <span id="residentCount" class="count-pill">Loading…</span>
   </header>
 
   <main class="public-shell">
     <section class="public-tools" aria-label="Resident search">
-      <label>
-        Search
-        <input id="publicSearch" type="search" placeholder="Name, ID or address" autocomplete="off" />
+      <label>Search
+        <input id="publicSearch" type="search" placeholder="Name, ID, address or living place" autocomplete="off">
       </label>
       <button id="clearPublicSearch" type="button">Clear</button>
     </section>
-
-    <section id="residentGroups" aria-live="polite"></section>
+    <section id="residentGroups" aria-live="polite"><div class="empty-state">Loading residents…</div></section>
   </main>
 
-  <script src="assets/js/public.js?v=1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="assets/js/public.js?v=2"></script>
 </body>
 </html>
