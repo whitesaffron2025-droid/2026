@@ -1,1 +1,34 @@
-<!doctype html><html><body><h1>Public View</h1></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Residents · Public View</title>
+  <meta name="description" content="Public residents directory grouped by address" />
+  <link rel="stylesheet" href="assets/css/public.css?v=1" />
+</head>
+<body>
+  <header class="public-header">
+    <div>
+      <p class="eyebrow">2026 Campaign Manager</p>
+      <h1>Residents</h1>
+      <p class="subtitle">Public directory grouped by address</p>
+    </div>
+    <span id="residentCount" class="count-pill">0 residents</span>
+  </header>
+
+  <main class="public-shell">
+    <section class="public-tools" aria-label="Resident search">
+      <label>
+        Search
+        <input id="publicSearch" type="search" placeholder="Name, ID or address" autocomplete="off" />
+      </label>
+      <button id="clearPublicSearch" type="button">Clear</button>
+    </section>
+
+    <section id="residentGroups" aria-live="polite"></section>
+  </main>
+
+  <script src="assets/js/public.js?v=1"></script>
+</body>
+</html>
