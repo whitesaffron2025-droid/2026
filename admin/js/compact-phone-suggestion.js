@@ -1,4 +1,4 @@
-/* MODULE: Compact Phone Suggestion | VERSION: 1.0.0 */
+/* MODULE: Compact Phone Suggestion | VERSION: 1.1.0 */
 (() => {
   'use strict';
   const cfg = window.CampaignConfig;
@@ -45,14 +45,37 @@
     remarks ? remarks.insertAdjacentElement('afterend', field) : grid.appendChild(field);
   }
 
-  document.addEventListener('submit', async event => {
-    const form = event.target;
-    if (form?.id !== 'editorForm') return;
+  document.addEventListener('click', async event => {
+    const saveButton = event.target.closest('.editor-save');
+    if (!saveButton) return;
+    const form = saveButton.closest('#editorForm');
+    if (!form || form.dataset.phoneSuggestionSaved === '1') return;
     const section = text(form.dataset.section).toLowerCase();
     if (!workflows.has(section)) return;
+
     const suggested = text(form.querySelector('[name="phone_suggested"]')?.value);
     if (!suggested) return;
-    await db.from(cfg.tableName).update({ phone_suggested: suggested }).eq('id', form.dataset.id);
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
+
+    const { error } = await db.from(cfg.tableName)
+      .update({ phone_suggested: suggested })
+      .eq('id', form.dataset.id);
+
+    if (error) {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save Changes';
+      alert(error.message);
+      return;
+    }
+
+    form.dataset.phoneSuggestionSaved = '1';
+    saveButton.disabled = false;
+    saveButton.textContent = 'Save Changes';
+    form.requestSubmit(saveButton);
   }, true);
 
   new MutationObserver(decorate).observe(document.body, { childList: true, subtree: true });
