@@ -7,7 +7,7 @@ function renderDashboard(config) {
   if (!container) return;
 
   let html = '';
-  
+
   for (const section of Object.keys(config)) {
     // ✅ FIXED: Null-safe stats mapping
     const statItems = (config[section]?.stats || []).map(stat => {
@@ -28,7 +28,7 @@ function renderDashboard(config) {
   }
 
   container.innerHTML = html;
-  
+
   // ✅ FIXED: Loading indicator now clears properly
   const loader = document.getElementById('loading-indicator');
   if (loader) {
