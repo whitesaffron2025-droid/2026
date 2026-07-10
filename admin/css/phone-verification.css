@@ -1,0 +1,16 @@
+/* ===================================================
+   MODULE : Phone Verification
+   VERSION: 1.0.0
+   =================================================== */
+.phone-review-panel{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;padding:16px;border:1px solid #dbe4ef;border-radius:14px;background:#f8fbff}
+.phone-review-panel.admin-review{grid-template-columns:1fr}
+.phone-review-heading{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.phone-review-heading strong{display:block;color:#10233f;font-size:15px}
+.phone-review-heading small{display:block;margin-top:4px;color:#6f829a;font-weight:500;line-height:1.4}
+.phone-review-status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#e9eef5;color:#5f7188;font-size:10px;font-weight:800;text-transform:uppercase}
+.phone-review-status.pending{background:#fff3cd;color:#856404}.phone-review-status.verified{background:#d8f3e5;color:#12633f}.phone-review-status.dismissed{background:#f4e2e2;color:#8e3030}
+.phone-review-suggestion{display:grid;grid-template-columns:90px 1fr;gap:7px 12px;padding:12px;border-radius:12px;background:#fff;border:1px solid #e2e8f0}
+.phone-review-suggestion span{color:#71849a;font-size:11px;font-weight:800;text-transform:uppercase}.phone-review-suggestion strong{color:#18314f;overflow-wrap:anywhere}
+.phone-review-actions{display:flex;justify-content:flex-end;gap:10px}
+.phone-review-badge{display:inline-flex;margin-bottom:8px;padding:4px 8px;border-radius:999px;background:#fff3cd;color:#856404;font-size:10px;font-weight:800;text-transform:uppercase}
+@media(max-width:700px){.phone-review-panel{grid-template-columns:1fr}.phone-review-heading{align-items:flex-start;flex-direction:column}.phone-review-actions{justify-content:stretch;flex-direction:column}.phone-review-actions .btn{width:100%}}
