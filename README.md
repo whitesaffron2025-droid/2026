@@ -1,80 +1,141 @@
 # 2026 Campaign Manager
 
-Stable baseline for the 2026 campaign voter-management application.
+Stable campaign-management application for the 2026 election workflow.
 
-## Stack
+## Current stable build
 
-- HTML5, CSS3, Vanilla JavaScript
-- Supabase Auth and PostgreSQL
-- GitHub Pages
-- Master table: `public."2026"`
+- Build: `2026.07.10-clean-stable`
+- Frontend: HTML5, CSS3, Vanilla JavaScript
+- Backend: Supabase Auth + PostgreSQL
+- Hosting: GitHub Pages
+- Master resident table: `public."2026"`
+- Assignment history table: `public.resident_assignments`
 
-## Core architecture
+## Architecture
 
-Residents is the single source of truth. Assign, Calls, Votes, Door to Door, and Transport are workflow views of the same resident records. There is no duplicate voter storage.
+Residents is the single source of truth. Assign, Calls, Votes, Door to Door, and Transport are workflow views of the same resident records. No workflow stores a duplicate resident record.
 
-## Locked identity fields
+```text
+Supabase public."2026"
+        │
+        ├── Residents Master
+        ├── Assign
+        ├── Calls
+        ├── Votes
+        ├── Visits
+        └── Transport
+```
 
-These fields are treated as identity-linked master data and cannot be edited from workflow screens:
+Assignment history is stored separately so one resident can have multiple assignees without overwriting earlier assignment records.
 
-- Name
-- National ID
-- Official address (`house`)
-- Sex
-- Age
+## Active pages
 
-## Correctable resident fields
+- `/index.html` — visual landing page
+- `/public.html` — read-only public resident gallery
+- `/shared.html` — filtered self-assignment workspace
+- `/admin/` — authenticated admin master workspace
 
-- Current living place can be corrected from Residents and Door to Door.
-- Phone number can be corrected from Residents and Calls.
-- Updating current living place does not change the official ID-linked address.
+## Active admin modules
+
+The current `admin/index.html` intentionally loads only these JavaScript modules:
+
+```text
+admin/js/app.js
+admin/js/dashboard-modern.js
+```
+
+The current active workflow styling is:
+
+```text
+admin/css/workflow-clean.css
+```
+
+Older patch modules remain in the repository only as historical files and are not loaded by the stable admin build.
+
+## Field permissions
+
+| Field | Residents | Assign | Calls | Votes | Visits | Transport |
+|---|---:|---:|---:|---:|---:|---:|
+| Name | Locked | Locked | Locked | Locked | Locked | Locked |
+| National ID | Locked | Locked | Locked | Locked | Locked | Locked |
+| Official Address | Locked | Locked | Locked | Locked | Locked | Locked |
+| Sex | Locked | Locked | Locked | Locked | Locked | Locked |
+| Age | Locked | Locked | Locked | Locked | Locked | Locked |
+| Phone | Editable | Read-only | Read-only | Read-only | Read-only | Read-only |
+| Current Living Place | Editable | Read-only | Read-only | Read-only | Editable | Read-only |
+| Suggested Phone Number | — | Editable suggestion | Editable suggestion | Editable suggestion | Editable suggestion | Editable suggestion |
+
+A suggested phone number does not overwrite the master `phone` field. The actual phone number is changed only from Residents Master.
 
 ## Section ownership
 
 ### Residents
 
-Gallery view shows:
-
-- Resident image
-- Name
-- National ID
-- Official address
-- Current living place
-
-Residents can update only current living place and phone number.
+- Gallery and list views
+- Party, address, sex, and search filtering
+- Edits only phone, current living place, and remarks
 
 ### Assign
 
-Updates only assignment status, assignee, assignment time, and remarks.
+- Generates filtered self-assignment links
+- Shows all assignee names and assignment times from `resident_assignments`
+- Supports one resident being assigned to multiple people
 
 ### Calls
 
-Updates phone number, phone/call status, call agent, call notes, last-call time, and call attempts. This is where wrong phone numbers can be corrected.
+- Updates call status, call outcome, agent, notes, call attempts, and last-call time
+- Shows phone and current living place as read-only
 
 ### Votes
 
-Updates vote status, support level, and remarks.
+- Updates vote status, support level, and remarks
+- Shows phone and current living place as read-only
 
 ### Door to Door
 
-Updates visit status, current living place, and remarks. Use this section when a resident is confirmed to live elsewhere.
+- Updates visit status, current living place, and remarks
+- Phone remains read-only
 
 ### Transport
 
-Updates transport status and remarks.
+- Updates transport status and remarks
+- Phone and current living place remain read-only
 
-## Status logic
+## Party filtering
 
-- Will Vote, Not Vote, Guaranteed, successful Calls, and Reached visits set `reach_status` to `reached`.
-- Unassigned clears assignment owner and assignment time.
-- A saved Call increases `call_attempts` and records `last_call_at`.
+The global Party filter uses one consistent classification:
+
+```text
+All
+PNC
+MDP
+No Party
+```
+
+Any value other than exact `PNC` or `MDP` is classified as `No Party`.
+
+## Dashboard logic
+
+- Dashboard totals respect the selected Party filter
+- Percentages use `matching records ÷ selected total × 100`
+- Today's Call Goal uses `last_call_at` from the current calendar day
+- Clicking a house opens Residents filtered to that official address
+- Assignment feed reads from `resident_assignments`
 
 ## Security
 
-- Admin uses Supabase email/password authentication.
-- Passwords are not stored in localStorage.
-- Database access must remain protected by Supabase Row Level Security policies.
+- Admin uses Supabase email/password authentication
+- Passwords are not stored in localStorage
+- Shared assignment users must authenticate before saving
+- Supabase Row Level Security should remain enabled
+- The public resident page is read-only
 
-## Current milestone
+## Backup and SHA manifest
 
-Resident gallery, persistent filtering, section-owned editors, live Supabase records, and locked identity fields.
+See:
+
+```text
+docs/FILE-STRUCTURE-BACKUP.md
+```
+
+That file records the active structure, current module versions, and GitHub blob SHAs for the stable build.
