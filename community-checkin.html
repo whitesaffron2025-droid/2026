@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Community Event Check-In</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resident Check-In</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#111827;background:#f3f4f6}
@@ -23,7 +23,7 @@
 <body>
   <main class="container">
     <header class="header">
-      <div><h1>📋 Community Event Check-In</h1><p class="sub">Live attendance saved to Supabase.</p></div>
+      <div><h1>📋 Resident Check-In</h1><p class="sub">Live attendance saved to Supabase.</p></div>
       <div class="header-actions">
         <button class="btn btn-secondary" id="refreshBtn" type="button">Refresh</button>
         <button class="btn btn-secondary" id="importBtn" type="button">Import CSV</button>
@@ -36,30 +36,30 @@
     <div id="message" class="message"></div>
 
     <section class="stats">
-      <div class="stat-card blue"><div class="num" id="total">0</div><div class="label">Total Attendees</div></div>
-      <div class="stat-card green"><div class="num" id="attended">0</div><div class="label">Attended</div></div>
-      <div class="stat-card orange"><div class="num" id="notAttended">0</div><div class="label">Not Attended</div></div>
+      <div class="stat-card blue"><div class="num" id="total">0</div><div class="label">Total Residents</div></div>
+      <div class="stat-card green"><div class="num" id="voted">0</div><div class="label">✅ Voted</div></div>
+      <div class="stat-card orange"><div class="num" id="notVoted">0</div><div class="label">⏳ Not Voted</div></div>
       <div class="stat-card red"><div class="num" id="remaining">0</div><div class="label">Remaining</div></div>
     </section>
 
     <section class="add-section">
-      <input id="nameInput" type="text" placeholder="Add attendee name" autocomplete="off">
-      <button class="btn btn-primary" id="addBtn" type="button">Add Attendee</button>
+      <input id="nameInput" type="text" placeholder="Add resident name" autocomplete="off">
+      <button class="btn btn-primary" id="addBtn" type="button">Add Resident</button>
     </section>
 
     <section class="toolbar">
-      <input id="searchInput" type="search" placeholder="Search attendees...">
+      <input id="searchInput" type="search" placeholder="Search residents...">
     </section>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Attended At</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody id="tableBody"><tr><td colspan="4" class="empty">Loading attendees…</td></tr></tbody>
+        <thead><tr><th>Name</th><th>Voted At</th><th>Marked By</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="tableBody"><tr><td colspan="5" class="empty">Loading residents…</td></tr></tbody>
       </table>
     </div>
 
     <div class="footer-actions"><button class="btn btn-secondary btn-sm" id="footerPrintBtn" type="button">🖨️ Print</button></div>
-    <p class="note">Source: Supabase table <strong>2026</strong>. Every attendance change is saved immediately.</p>
+    <p class="note">Source: Supabase table <strong>campaign</strong>. Every change is saved immediately.</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -67,72 +67,283 @@
   <script>
     (()=>{
       'use strict';
-      const cfg=window.CampaignConfig;
-      const $=id=>document.getElementById(id);
-      let db=null,attendees=[],searchTerm='',busy=false;
+      const cfg = window.CampaignConfig;
+      const $ = id => document.getElementById(id);
+      const TABLE = 'campaign';
+      let db = null, residents = [], searchTerm = '', busy = false;
 
-      function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-      function displayDate(value){return value?new Date(value).toLocaleString('en-GB'):'—'}
-      function showMessage(text,type='ok'){const el=$('message');el.textContent=text;el.className=`message show ${type}`;clearTimeout(el._timer);el._timer=setTimeout(()=>el.className='message',6000)}
-      function setBusy(value){busy=value;document.querySelectorAll('button').forEach(button=>button.disabled=value)}
-
-      function render(){
-        const total=attendees.length,attended=attendees.filter(a=>a.attended).length;
-        $('total').textContent=total;$('attended').textContent=attended;$('notAttended').textContent=total-attended;$('remaining').textContent=total-attended;
-        const term=searchTerm.trim().toLowerCase();
-        const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-        $('tableBody').innerHTML=list.length?list.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${escapeHtml(displayDate(a.voted_at))}</td><td><span class="status-badge ${a.attended?'attended':'not-attended'}">${a.attended?'✅ Attended':'⏳ Not Attended'}</span></td><td><button class="btn btn-sm ${a.attended?'btn-secondary':'btn-success'}" data-id="${a.id}">${a.attended?'↩️ Undo':'✅ Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees found.</td></tr>';
+      if (!cfg?.supabaseUrl || !cfg?.supabaseKey || !window.supabase) {
+        document.getElementById('tableBody').innerHTML = 
+          '<tr><td colspan="5" class="empty" style="color:red;">⚠️ Supabase configuration missing. Check js/config.js</td></tr>';
+        console.error('❌ CampaignConfig missing:', cfg);
+        return;
       }
 
-      async function loadAttendees(){
-        if(busy)return;setBusy(true);
-        $('tableBody').innerHTML='<tr><td colspan="4" class="empty">Loading attendees…</td></tr>';
-        const {data,error}=await db.from('2026').select('id,name,attended,voted_at').order('name',{ascending:true});
+      console.log('✅ Config loaded:', cfg.supabaseUrl);
+      console.log('✅ Using table:', TABLE);
+      db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function displayDate(value) {
+        return value ? new Date(value).toLocaleString('en-GB') : '—';
+      }
+
+      function showMessage(text, type = 'ok') {
+        const el = $('message');
+        el.textContent = text;
+        el.className = `message show ${type}`;
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.className = 'message', 6000);
+      }
+
+      function setBusy(value) {
+        busy = value;
+        document.querySelectorAll('button').forEach(button => button.disabled = value);
+      }
+
+      function render() {
+        const total = residents.length;
+        const voted = residents.filter(r => r.has_voted === true).length;
+        const notVoted = total - voted;
+        
+        $('total').textContent = total;
+        $('voted').textContent = voted;
+        $('notVoted').textContent = notVoted;
+        $('remaining').textContent = notVoted;
+
+        const term = searchTerm.trim().toLowerCase();
+        const list = residents
+          .filter(r => !term || String(r.name || '').toLowerCase().includes(term))
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+
+        $('tableBody').innerHTML = list.length
+          ? list.map(r => `
+              <tr>
+                <td><strong>${escapeHtml(r.name)}</strong></td>
+                <td>${escapeHtml(displayDate(r.voted_at))}</td>
+                <td>${escapeHtml(r.voted_marked_by || '—')}</td>
+                <td>
+                  <span class="status-badge ${r.has_voted ? 'attended' : 'not-attended'}">
+                    ${r.has_voted ? '✅ Voted' : '⏳ Not Voted'}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-sm ${r.has_voted ? 'btn-secondary' : 'btn-success'}" data-id="${r.id}">
+                    ${r.has_voted ? '↩️ Undo' : '✅ Mark Voted'}
+                  </button>
+                </td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="5" class="empty">No residents found.</td></tr>';
+      }
+
+      async function loadResidents() {
+        if (busy) return;
+        setBusy(true);
+        $('tableBody').innerHTML = '<tr><td colspan="5" class="empty">Loading residents…</td></tr>';
+
+        try {
+          const { data, error } = await db
+            .from(TABLE)
+            .select('id, name, has_voted, voted_at, voted_marked_by')
+            .order('name', { ascending: true });
+
+          setBusy(false);
+
+          if (error) {
+            $('tableBody').innerHTML = '<tr><td colspan="5" class="empty">Could not load residents.</td></tr>';
+            showMessage(error.message, 'error');
+            console.error('❌ Load error:', error);
+            return;
+          }
+
+          residents = data || [];
+          render();
+          console.log(`✅ Loaded ${residents.length} residents from "${TABLE}"`);
+
+        } catch (e) {
+          setBusy(false);
+          $('tableBody').innerHTML = '<tr><td colspan="5" class="empty">Error loading residents.</td></tr>';
+          showMessage(e.message, 'error');
+          console.error('❌ Load error:', e);
+        }
+      }
+
+      async function addResident() {
+        const name = $('nameInput').value.trim();
+        if (!name) return $('nameInput').focus();
+
+        if (residents.some(r => String(r.name).toLowerCase() === name.toLowerCase())) {
+          return showMessage(`"${name}" already exists.`, 'error');
+        }
+
+        setBusy(true);
+
+        try {
+          const { data, error } = await db
+            .from(TABLE)
+            .insert({ name, has_voted: false, voted_at: null, voted_marked_by: null })
+            .select('id, name, has_voted, voted_at, voted_marked_by')
+            .single();
+
+          setBusy(false);
+
+          if (error) return showMessage(error.message, 'error');
+
+          residents.push(data);
+          $('nameInput').value = '';
+          render();
+          $('nameInput').focus();
+          showMessage('Resident added.');
+
+        } catch (e) {
+          setBusy(false);
+          showMessage(e.message, 'error');
+        }
+      }
+
+      async function toggleVoted(id) {
+        const resident = residents.find(r => String(r.id) === String(id));
+        if (!resident) return;
+
+        const next = !resident.has_voted;
+        const stamp = next ? new Date().toISOString() : null;
+        const marker = next ? (cfg.adminEmail || 'admin') : null;
+
+        setBusy(true);
+
+        try {
+          const { data, error } = await db
+            .from(TABLE)
+            .update({ has_voted: next, voted_at: stamp, voted_marked_by: marker })
+            .eq('id', resident.id)
+            .select('id, name, has_voted, voted_at, voted_marked_by')
+            .single();
+
+          setBusy(false);
+
+          if (error) return showMessage(error.message, 'error');
+
+          Object.assign(resident, data);
+          render();
+          showMessage(next ? '✅ Marked as voted.' : '↩️ Vote undone.');
+
+        } catch (e) {
+          setBusy(false);
+          showMessage(e.message, 'error');
+        }
+      }
+
+      function csvCell(value) {
+        return `"${String(value ?? '').replace(/"/g, '""')}"`;
+      }
+
+      function exportCsv() {
+        if (!residents.length) return showMessage('No residents to export.', 'error');
+
+        const term = searchTerm.trim().toLowerCase();
+        const list = residents.filter(r => !term || String(r.name || '').toLowerCase().includes(term));
+
+        const rows = [
+          ['Name', 'Status', 'Voted At', 'Marked By'],
+          ...list.map(r => [
+            r.name,
+            r.has_voted ? 'Voted' : 'Not Voted',
+            displayDate(r.voted_at),
+            r.voted_marked_by || ''
+          ])
+        ];
+
+        const csv = '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `resident-checkin-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function parseCsvLine(line) {
+        const out = [];
+        let value = '', quoted = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') {
+            if (quoted && line[i + 1] === '"') { value += '"'; i++; }
+            else quoted = !quoted;
+          } else if (c === ',' && !quoted) {
+            out.push(value.trim());
+            value = '';
+          } else value += c;
+        }
+        out.push(value.trim());
+        return out;
+      }
+
+      async function importCsv(file) {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        if (!lines.length) return showMessage('CSV is empty.', 'error');
+
+        const first = parseCsvLine(lines[0]);
+        const header = first.findIndex(v => v.toLowerCase() === 'name');
+        const start = header >= 0 ? 1 : 0;
+        const nameIndex = header >= 0 ? header : 0;
+
+        const existing = new Set(residents.map(r => String(r.name).toLowerCase()));
+        const rows = [];
+
+        for (let i = start; i < lines.length; i++) {
+          const name = (parseCsvLine(lines[i])[nameIndex] || '').trim();
+          if (name && !existing.has(name.toLowerCase())) {
+            rows.push({ name, has_voted: false, voted_at: null, voted_marked_by: null });
+            existing.add(name.toLowerCase());
+          }
+        }
+
+        if (!rows.length) return showMessage('No new residents found.', 'error');
+
+        setBusy(true);
+        const { error } = await db.from(TABLE).insert(rows);
         setBusy(false);
-        if(error){$('tableBody').innerHTML='<tr><td colspan="4" class="empty">Could not load attendees.</td></tr>';showMessage(error.message,'error');return}
-        attendees=data||[];render();
+
+        if (error) return showMessage(error.message, 'error');
+
+        showMessage(`${rows.length} residents imported.`);
+        await loadResidents();
       }
 
-      async function addAttendee(){
-        const name=$('nameInput').value.trim();if(!name)return $('nameInput').focus();
-        if(attendees.some(a=>String(a.name).toLowerCase()===name.toLowerCase()))return showMessage(`"${name}" already exists.`,'error');
-        setBusy(true);const {data,error}=await db.from('2026').insert({name,attended:false,voted_at:null}).select('id,name,attended,voted_at').single();setBusy(false);
-        if(error)return showMessage(error.message,'error');
-        attendees.push(data);$('nameInput').value='';render();$('nameInput').focus();showMessage('Attendee added.');
-      }
+      $('addBtn').addEventListener('click', addResident);
+      $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') addResident(); });
 
-      async function toggleAttendance(id){
-        const attendee=attendees.find(a=>String(a.id)===String(id));if(!attendee)return;
-        const next=!attendee.attended,stamp=next?new Date().toISOString():null;
-        setBusy(true);const {data,error}=await db.from('2026').update({attended:next,voted_at:stamp}).eq('id',attendee.id).select('id,name,attended,voted_at').single();setBusy(false);
-        if(error)return showMessage(error.message,'error');
-        Object.assign(attendee,data);render();showMessage(next?'Attendance marked.':'Attendance removed.');
-      }
+      $('searchInput').addEventListener('input', e => {
+        searchTerm = e.target.value;
+        render();
+      });
 
-      function csvCell(value){return `"${String(value??'').replace(/"/g,'""')}"`}
-      function exportCsv(){
-        if(!attendees.length)return showMessage('No attendees to export.','error');
-        const term=searchTerm.trim().toLowerCase();const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term));
-        const rows=[['Name','Status','Attended At'],...list.map(a=>[a.name,a.attended?'Attended':'Not Attended',displayDate(a.voted_at)])];
-        const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download=`community-checkin-${new Date().toISOString().slice(0,10)}.csv`;link.click();URL.revokeObjectURL(url);
-      }
+      $('tableBody').addEventListener('click', e => {
+        const button = e.target.closest('[data-id]');
+        if (button) toggleVoted(button.dataset.id);
+      });
 
-      function parseCsvLine(line){const out=[];let value='',quoted=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i++}else quoted=!quoted}else if(c===','&&!quoted){out.push(value.trim());value=''}else value+=c}out.push(value.trim());return out}
-      async function importCsv(file){
-        const text=await file.text(),lines=text.split(/\r?\n/).filter(line=>line.trim());if(!lines.length)return showMessage('CSV is empty.','error');
-        const first=parseCsvLine(lines[0]),header=first.findIndex(v=>v.toLowerCase()==='name'),start=header>=0?1:0,nameIndex=header>=0?header:0,existing=new Set(attendees.map(a=>String(a.name).toLowerCase())),rows=[];
-        for(let i=start;i<lines.length;i++){const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();if(name&&!existing.has(name.toLowerCase())){rows.push({name,attended:false,voted_at:null});existing.add(name.toLowerCase())}}
-        if(!rows.length)return showMessage('No new attendees found.','error');
-        setBusy(true);const {error}=await db.from('2026').insert(rows);setBusy(false);if(error)return showMessage(error.message,'error');showMessage(`${rows.length} attendees imported.`);await loadAttendees();
-      }
+      $('refreshBtn').addEventListener('click', loadResidents);
 
-      $('addBtn').addEventListener('click',addAttendee);$('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAttendee()});
-      $('searchInput').addEventListener('input',e=>{searchTerm=e.target.value;render()});$('tableBody').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(button)toggleAttendance(button.dataset.id)});
-      $('refreshBtn').addEventListener('click',loadAttendees);$('importBtn').addEventListener('click',()=>$('fileInput').click());$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(file)await importCsv(file);e.target.value=''});
-      $('exportBtn').addEventListener('click',exportCsv);$('printBtn').addEventListener('click',()=>window.print());$('footerPrintBtn').addEventListener('click',()=>window.print());
+      $('importBtn').addEventListener('click', () => $('fileInput').click());
+      $('fileInput').addEventListener('change', async e => {
+        const file = e.target.files?.[0];
+        if (file) await importCsv(file);
+        e.target.value = '';
+      });
 
-      if(!cfg?.supabaseUrl||!cfg?.supabaseKey||!window.supabase){showMessage('Supabase configuration is missing.','error');return}
-      db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);loadAttendees();
+      $('exportBtn').addEventListener('click', exportCsv);
+      $('printBtn').addEventListener('click', () => window.print());
+      $('footerPrintBtn').addEventListener('click', () => window.print());
+
+      loadResidents();
+
     })();
   </script>
 </body>
