@@ -8,43 +8,102 @@
   const table = cfg.tableName || 'campaign';
   const pageSize = 1000;
   let rows = [];
+  let assignments = [];
+  const assignmentsByResident = new Map();
   const pending = new Map();
   let isSaving = false;
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
+  const text = value => String(value ?? '').trim();
 
   const currentVotedValue = row => pending.has(String(row.id))
     ? pending.get(String(row.id))
     : row.has_voted === true;
 
-  async function loadResidents() {
+  function assignmentNames(row) {
+    return assignmentsByResident.get(String(row.id)) || [];
+  }
+
+  function isAssigned(row) {
+    return assignmentNames(row).length > 0;
+  }
+
+  async function loadPaged(queryFactory) {
     const all = [];
     for (let from = 0; ; from += pageSize) {
-      const { data, error } = await db
-        .from(table)
-        .select('id,photo_url,name,national_id,house,lives_in,living_place,phone,sex,age,party,has_voted,voted_at')
-        .eq('party', 'PNC')
-        .order('house', { ascending: true })
-        .order('name', { ascending: true })
-        .range(from, from + pageSize - 1);
+      const { data, error } = await queryFactory(from, from + pageSize - 1);
       if (error) throw error;
       all.push(...(data || []));
       if (!data || data.length < pageSize) break;
     }
-    rows = all;
-    render();
+    return all;
+  }
+
+  async function loadResidents() {
+    rows = await loadPaged((from, to) => db
+      .from(table)
+      .select('id,photo_url,name,national_id,house,lives_in,living_place,phone,sex,age,party,has_voted,voted_at')
+      .eq('party', 'PNC')
+      .order('house', { ascending: true })
+      .order('name', { ascending: true })
+      .range(from, to));
+  }
+
+  async function loadAssignments() {
+    assignments = await loadPaged((from, to) => db
+      .from('resident_assignments')
+      .select('resident_id,assignee_name,assigned_at')
+      .order('assigned_at', { ascending: false })
+      .range(from, to));
+
+    assignmentsByResident.clear();
+    assignments.forEach(item => {
+      const id = String(item.resident_id);
+      const name = text(item.assignee_name);
+      if (!name) return;
+      const names = assignmentsByResident.get(id) || [];
+      if (!names.some(existing => existing.toLowerCase() === name.toLowerCase())) names.push(name);
+      assignmentsByResident.set(id, names);
+    });
+  }
+
+  function populateFilterOptions() {
+    const addresses = [...new Set(rows.map(row => text(row.house)).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const assigners = [...new Set(assignments.map(item => text(item.assignee_name)).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    document.getElementById('addressFilter').innerHTML =
+      '<option value="ALL">All Addresses</option>' +
+      addresses.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+
+    document.getElementById('assignerFilter').innerHTML =
+      '<option value="ALL">All Assigners</option>' +
+      assigners.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
   }
 
   function baseFilteredRows() {
+    const address = document.getElementById('addressFilter').value;
+    const assignmentStatus = document.getElementById('assignmentFilter').value;
+    const assigner = document.getElementById('assignerFilter').value;
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
     return rows.filter(row => {
+      const names = assignmentNames(row);
+      const assigned = names.length > 0;
+      const addressMatches = address === 'ALL' || text(row.house) === address;
+      const assignmentMatches = assignmentStatus === 'ALL' ||
+        (assignmentStatus === 'ASSIGNED' ? assigned : !assigned);
+      const assignerMatches = assigner === 'ALL' ||
+        names.some(name => name.toLowerCase() === assigner.toLowerCase());
       const queryMatches = !query || [
         row.id, row.national_id, row.name, row.house,
-        row.lives_in, row.living_place, row.phone, row.sex, row.age
+        row.lives_in, row.living_place, row.phone, row.sex, row.age,
+        names.join(' ')
       ].map(value => String(value ?? '').toLowerCase()).join(' ').includes(query);
-      return queryMatches;
+      return addressMatches && assignmentMatches && assignerMatches && queryMatches;
     });
   }
 
@@ -87,12 +146,14 @@
       const time = !isPending && row.has_voted && row.voted_at
         ? `<small>${esc(formatSavedTime(row.voted_at))}</small>`
         : '';
+      const names = assignmentNames(row);
+      const assignTitle = names.length ? ` title="Assigned: ${esc(names.join(', '))}"` : '';
 
-      return `<tr class="${voted ? 'voted-row' : ''} ${isPending ? 'pending-row' : ''}" data-resident-id="${esc(row.id)}">
+      return `<tr class="${voted ? 'voted-row' : ''} ${isPending ? 'pending-row' : ''}" data-resident-id="${esc(row.id)}"${assignTitle}>
         <td>${esc(row.id)}</td>
         <td>${photo}</td>
         <td>${esc(row.national_id) || '-'}</td>
-        <td><strong>${esc(row.name) || 'No name'}</strong></td>
+        <td><strong>${esc(row.name) || 'No name'}</strong>${names.length ? `<small class="assignment-note">Assigned: ${esc(names.join(', '))}</small>` : ''}</td>
         <td>${esc(row.house) || '-'}</td>
         <td>${esc(row.lives_in || row.living_place) || 'Not recorded'}</td>
         <td>${esc(row.phone) || '-'}</td>
@@ -106,7 +167,7 @@
           ${isPending ? '<small class="pending-label">Pending save</small>' : time}
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="10" class="no-results">No PNC residents found for this filter</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="no-results">No PNC residents found for these filters</td></tr>';
 
     document.getElementById('totalCount').textContent = baseList.length.toLocaleString();
     document.getElementById('votedCount').textContent = baseList.filter(currentVotedValue).length.toLocaleString();
@@ -189,8 +250,8 @@
   }
 
   function csvCell(value) {
-    const text = String(value ?? '');
-    return `"${text.replace(/"/g, '""')}"`;
+    const valueText = String(value ?? '');
+    return `"${valueText.replace(/"/g, '""')}"`;
   }
 
   function exportFilteredCsv() {
@@ -202,13 +263,15 @@
 
     const headers = [
       'ID', 'ID Number', 'Name', 'Official Address', 'Living Now',
-      'Mobile', 'Sex', 'Age', 'Vote Status', 'Voted At'
+      'Mobile', 'Sex', 'Age', 'Assignment Status', 'Assignees',
+      'Vote Status', 'Voted At'
     ];
 
     const lines = [headers.map(csvCell).join(',')];
     list.forEach(row => {
       const voted = currentVotedValue(row);
       const votedAt = voted ? (pending.has(String(row.id)) ? 'Pending save' : formatSavedTime(row.voted_at)) : '';
+      const names = assignmentNames(row);
       lines.push([
         row.id,
         row.national_id,
@@ -218,6 +281,8 @@
         row.phone,
         row.sex,
         row.age,
+        names.length ? 'Assigned' : 'Unassigned',
+        names.join(', '),
         voted ? 'Voted' : 'Not Yet',
         votedAt
       ].map(csvCell).join(','));
@@ -237,6 +302,15 @@
     URL.revokeObjectURL(url);
   }
 
+  function clearFilters() {
+    document.getElementById('addressFilter').value = 'ALL';
+    document.getElementById('assignmentFilter').value = 'ALL';
+    document.getElementById('assignerFilter').value = 'ALL';
+    document.getElementById('statusFilter').value = 'ALL';
+    document.getElementById('searchInput').value = '';
+    render();
+  }
+
   document.addEventListener('click', event => {
     const toggle = event.target.closest('[data-toggle-vote]');
     if (toggle) {
@@ -254,15 +328,11 @@
 
     if (event.target.closest('#exportFiltered')) exportFilteredCsv();
     if (event.target.closest('#saveChanges')) saveChanges();
-
-    if (event.target.closest('#clearFilters')) {
-      document.getElementById('statusFilter').value = 'ALL';
-      document.getElementById('searchInput').value = '';
-      render();
-    }
+    if (event.target.closest('#clearFilters')) clearFilters();
   });
 
-  document.getElementById('statusFilter').addEventListener('change', render);
+  ['addressFilter', 'assignmentFilter', 'assignerFilter', 'statusFilter']
+    .forEach(id => document.getElementById(id).addEventListener('change', render));
   document.getElementById('searchInput').addEventListener('input', render);
 
   window.addEventListener('beforeunload', event => {
@@ -271,11 +341,16 @@
     event.returnValue = '';
   });
 
-  loadResidents().catch(error => {
-    console.error('PNC live turnout load failed:', error);
-    document.getElementById('residentRows').innerHTML = `<tr><td colspan="10" class="no-results">${esc(error.message)}</td></tr>`;
-    const state = document.getElementById('saveState');
-    state.textContent = 'Load failed';
-    state.dataset.state = 'error';
-  });
+  Promise.all([loadResidents(), loadAssignments()])
+    .then(() => {
+      populateFilterOptions();
+      render();
+    })
+    .catch(error => {
+      console.error('PNC live turnout load failed:', error);
+      document.getElementById('residentRows').innerHTML = `<tr><td colspan="10" class="no-results">${esc(error.message)}</td></tr>`;
+      const state = document.getElementById('saveState');
+      state.textContent = 'Load failed';
+      state.dataset.state = 'error';
+    });
 })();
