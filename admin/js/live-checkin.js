@@ -25,6 +25,7 @@
       const { data, error } = await db
         .from(table)
         .select('id,photo_url,name,national_id,house,lives_in,living_place,phone,sex,age,party,has_voted,voted_at')
+        .eq('party', 'PNC')
         .order('house', { ascending: true })
         .order('name', { ascending: true })
         .range(from, from + pageSize - 1);
@@ -37,16 +38,13 @@
   }
 
   function baseFilteredRows() {
-    const party = document.getElementById('partyFilter').value;
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
-
     return rows.filter(row => {
-      const partyMatches = party === 'ALL' || String(row.party || '').toUpperCase() === party;
       const queryMatches = !query || [
         row.id, row.national_id, row.name, row.house,
         row.lives_in, row.living_place, row.phone, row.sex, row.age
       ].map(value => String(value ?? '').toLowerCase()).join(' ').includes(query);
-      return partyMatches && queryMatches;
+      return queryMatches;
     });
   }
 
@@ -108,7 +106,7 @@
           ${isPending ? '<small class="pending-label">Pending save</small>' : time}
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="10" class="no-results">No residents found for this filter</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="no-results">No PNC residents found for this filter</td></tr>';
 
     document.getElementById('totalCount').textContent = baseList.length.toLocaleString();
     document.getElementById('votedCount').textContent = baseList.filter(currentVotedValue).length.toLocaleString();
@@ -160,7 +158,8 @@
       const { error } = await db
         .from(table)
         .update({ has_voted: hasVoted, voted_at: votedAt })
-        .eq('id', Number(id));
+        .eq('id', Number(id))
+        .eq('party', 'PNC');
 
       if (error) {
         failed.push({ id, message: error.message });
@@ -207,14 +206,12 @@
     if (event.target.closest('#saveChanges')) saveChanges();
 
     if (event.target.closest('#clearFilters')) {
-      document.getElementById('partyFilter').value = 'ALL';
       document.getElementById('statusFilter').value = 'ALL';
       document.getElementById('searchInput').value = '';
       render();
     }
   });
 
-  document.getElementById('partyFilter').addEventListener('change', render);
   document.getElementById('statusFilter').addEventListener('change', render);
   document.getElementById('searchInput').addEventListener('input', render);
 
@@ -225,7 +222,7 @@
   });
 
   loadResidents().catch(error => {
-    console.error('Live turnout load failed:', error);
+    console.error('PNC live turnout load failed:', error);
     document.getElementById('residentRows').innerHTML = `<tr><td colspan="10" class="no-results">${esc(error.message)}</td></tr>`;
     const state = document.getElementById('saveState');
     state.textContent = 'Load failed';
