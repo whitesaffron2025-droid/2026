@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PNC Live Turnout · 2026 Campaign Manager</title>
   <link rel="stylesheet" href="css/admin.css?v=20">
-  <link rel="stylesheet" href="css/live-checkin.css?v=8">
+  <link rel="stylesheet" href="css/live-checkin.css?v=9">
 </head>
 <body>
   <header class="live-header">
@@ -27,31 +27,30 @@
     </section>
 
     <section class="live-toolbar">
-      <select id="addressFilter" aria-label="Official address filter">
-        <option value="ALL">All Addresses</option>
-      </select>
+      <select id="addressFilter" aria-label="Official address filter"><option value="ALL">All Addresses</option></select>
       <select id="assignmentFilter" aria-label="Assignment status filter">
-        <option value="ALL">All Assignments</option>
-        <option value="ASSIGNED">Assigned</option>
-        <option value="UNASSIGNED">Unassigned</option>
+        <option value="ALL">All Assignments</option><option value="ASSIGNED">Assigned</option><option value="UNASSIGNED">Unassigned</option>
       </select>
       <select id="campaignVoteFilter" aria-label="Campaign vote status filter">
-        <option value="ALL">All Vote Statuses</option>
-        <option value="will-vote">Will Vote</option>
-        <option value="not-vote">Not Vote</option>
-        <option value="not-decided">Not Decided</option>
+        <option value="ALL">All Vote Statuses</option><option value="will-vote">Will Vote</option><option value="not-vote">Not Vote</option><option value="not-decided">Not Decided</option>
       </select>
       <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place or mobile">
       <select id="statusFilter" aria-label="Live turnout filter">
-        <option value="ALL">All Turnout Statuses</option>
-        <option value="VOTED">Voted</option>
-        <option value="NOT_VOTED">Not Yet</option>
+        <option value="ALL">All Turnout Statuses</option><option value="VOTED">Voted</option><option value="NOT_VOTED">Not Yet</option>
       </select>
       <button id="clearFilters" type="button" class="btn secondary">Clear</button>
       <button id="exportFiltered" type="button" class="btn secondary">Export Filtered CSV</button>
       <button id="sharePreview" type="button" class="btn secondary">Share Preview</button>
       <button id="saveChanges" type="button" class="btn primary" disabled>Save Changes</button>
       <span id="saveState" class="save-state">Loading residents…</span>
+    </section>
+
+    <section class="live-view-bar" aria-label="Resident view">
+      <strong>Resident View</strong>
+      <div class="live-view-toggle">
+        <button id="liveGalleryView" type="button" aria-pressed="false">Gallery</button>
+        <button id="liveListView" type="button" class="active" aria-pressed="true">List</button>
+      </div>
     </section>
 
     <section class="live-table-wrap">
@@ -64,6 +63,7 @@
       </table>
     </section>
 
+    <section id="liveGallery" class="live-gallery" hidden></section>
     <div class="footer-note">Only PNC residents are shown. Vote changes are written only after Save Changes.</div>
   </main>
 
@@ -71,5 +71,6 @@
   <script src="../js/config.js?v=20"></script>
   <script src="js/live-checkin.js?v=9"></script>
   <script src="js/live-share-preview.js?v=2"></script>
+  <script src="js/live-view-toggle.js?v=1"></script>
 </body>
 </html>
