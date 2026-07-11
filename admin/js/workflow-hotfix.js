@@ -1,11 +1,10 @@
-/* MODULE: Campaign Workflow Hotfix | VERSION: 1.1.1 | BUILD: 2026.07.11 */
+/* MODULE: Campaign Workflow Hotfix | VERSION: 1.1.2 | BUILD: 2026.07.11 */
 (() => {
   'use strict';
 
   const text = value => String(value ?? '').trim();
   let client = null;
   let assignmentTableAvailable = true;
-  let defaultPartyApplied = false;
   let observerFrame = 0;
 
   function getClient() {
@@ -49,20 +48,6 @@
     state.assignments.sort((a, b) => new Date(b.assigned_at || 0) - new Date(a.assigned_at || 0));
   }
 
-  function applyDefaultParty() {
-    if (!appReady() || defaultPartyApplied) return;
-    const { state } = window.CampaignApp;
-    if (!state.rows.length) return;
-    defaultPartyApplied = true;
-    state.party = 'PNC';
-    state.visible = 28;
-    const select = document.getElementById('globalParty');
-    if (select) {
-      select.value = 'PNC';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  }
-
   function setTextIfChanged(element, value) {
     if (!element) return;
     const next = String(value);
@@ -71,10 +56,11 @@
 
   function patchAssignSummary() {
     if (!appReady()) return;
-    const { state } = window.CampaignApp;
+    const app = window.CampaignApp;
+    const { state } = app;
     if (state.section !== 'assign') return;
 
-    const rows = state.rows.filter(row => text(row.party).toUpperCase() === 'PNC');
+    const rows = typeof app.getRows === 'function' ? app.getRows() : state.rows;
     const assigned = rows.filter(row => text(row.vote_assigned_by)).length;
     const completed = rows.filter(row => text(row.vote_assigned_by) && text(row.reach_status) === 'reached').length;
     const values = [rows.length, rows.length - assigned, assigned, completed];
@@ -175,7 +161,6 @@
       if (appReady() && window.CampaignApp.state.rows.length) {
         clearInterval(timer);
         rebuildMissingHistory();
-        applyDefaultParty();
         patchAssignSummary();
         document.dispatchEvent(new CustomEvent('campaign:dashboard'));
       } else if (attempts >= 200) {
@@ -188,7 +173,6 @@
     if (observerFrame) return;
     observerFrame = requestAnimationFrame(() => {
       observerFrame = 0;
-      applyDefaultParty();
       patchAssignSummary();
     });
   }
