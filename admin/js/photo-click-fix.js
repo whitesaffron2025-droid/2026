@@ -13,5 +13,15 @@
     editButton.click();
   }
 
+  function loadExportTools() {
+    if (document.querySelector('script[data-export-tools]')) return;
+    const script = document.createElement('script');
+    script.src = 'js/export-tools.js?v=1';
+    script.dataset.exportTools = 'true';
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
   document.addEventListener('click', openResidentFromPhoto, true);
+  document.addEventListener('DOMContentLoaded', loadExportTools, { once: true });
 })();
