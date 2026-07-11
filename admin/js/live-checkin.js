@@ -9,6 +9,7 @@
   const pageSize = 1000;
   let rows = [];
   let assignments = [];
+  let assignmentFiltersAvailable = true;
   const assignmentsByResident = new Map();
   const pending = new Map();
   let isSaving = false;
@@ -17,17 +18,12 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
   const text = value => String(value ?? '').trim();
-
   const currentVotedValue = row => pending.has(String(row.id))
     ? pending.get(String(row.id))
     : row.has_voted === true;
 
   function assignmentNames(row) {
     return assignmentsByResident.get(String(row.id)) || [];
-  }
-
-  function isAssigned(row) {
-    return assignmentNames(row).length > 0;
   }
 
   async function loadPaged(queryFactory) {
@@ -51,22 +47,55 @@
       .range(from, to));
   }
 
-  async function loadAssignments() {
-    assignments = await loadPaged((from, to) => db
-      .from('resident_assignments')
-      .select('resident_id,assignee_name,assigned_at')
-      .order('assigned_at', { ascending: false })
-      .range(from, to));
+  async function loadAssignmentsOptional() {
+    try {
+      assignments = await loadPaged((from, to) => db
+        .from('resident_assignments')
+        .select('resident_id,assignee_name,assigned_at')
+        .order('assigned_at', { ascending: false })
+        .range(from, to));
 
-    assignmentsByResident.clear();
-    assignments.forEach(item => {
-      const id = String(item.resident_id);
-      const name = text(item.assignee_name);
-      if (!name) return;
-      const names = assignmentsByResident.get(id) || [];
-      if (!names.some(existing => existing.toLowerCase() === name.toLowerCase())) names.push(name);
-      assignmentsByResident.set(id, names);
-    });
+      assignmentsByResident.clear();
+      assignments.forEach(item => {
+        const id = String(item.resident_id);
+        const name = text(item.assignee_name);
+        if (!name) return;
+        const names = assignmentsByResident.get(id) || [];
+        if (!names.some(existing => existing.toLowerCase() === name.toLowerCase())) names.push(name);
+        assignmentsByResident.set(id, names);
+      });
+      assignmentFiltersAvailable = true;
+    } catch (error) {
+      console.warn('Assignment filters unavailable:', error);
+      assignments = [];
+      assignmentsByResident.clear();
+      assignmentFiltersAvailable = false;
+    }
+  }
+
+  function showAssignmentAvailability() {
+    const assignmentFilter = document.getElementById('assignmentFilter');
+    const assignerFilter = document.getElementById('assignerFilter');
+    assignmentFilter.disabled = !assignmentFiltersAvailable;
+    assignerFilter.disabled = !assignmentFiltersAvailable;
+
+    let notice = document.getElementById('assignmentNotice');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.id = 'assignmentNotice';
+      notice.className = 'assignment-notice';
+      document.querySelector('.live-toolbar')?.insertAdjacentElement('afterend', notice);
+    }
+
+    if (assignmentFiltersAvailable) {
+      notice.hidden = true;
+      notice.textContent = '';
+    } else {
+      assignmentFilter.value = 'ALL';
+      assignerFilter.value = 'ALL';
+      notice.hidden = false;
+      notice.textContent = 'Assignment filters are temporarily unavailable. Residents, vote status, search, address, save, and export are still working.';
+    }
   }
 
   function populateFilterOptions() {
@@ -82,12 +111,18 @@
     document.getElementById('assignerFilter').innerHTML =
       '<option value="ALL">All Assigners</option>' +
       assigners.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+
+    showAssignmentAvailability();
   }
 
   function baseFilteredRows() {
     const address = document.getElementById('addressFilter').value;
-    const assignmentStatus = document.getElementById('assignmentFilter').value;
-    const assigner = document.getElementById('assignerFilter').value;
+    const assignmentStatus = assignmentFiltersAvailable
+      ? document.getElementById('assignmentFilter').value
+      : 'ALL';
+    const assigner = assignmentFiltersAvailable
+      ? document.getElementById('assignerFilter').value
+      : 'ALL';
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
     return rows.filter(row => {
@@ -147,9 +182,8 @@
         ? `<small>${esc(formatSavedTime(row.voted_at))}</small>`
         : '';
       const names = assignmentNames(row);
-      const assignTitle = names.length ? ` title="Assigned: ${esc(names.join(', '))}"` : '';
 
-      return `<tr class="${voted ? 'voted-row' : ''} ${isPending ? 'pending-row' : ''}" data-resident-id="${esc(row.id)}"${assignTitle}>
+      return `<tr class="${voted ? 'voted-row' : ''} ${isPending ? 'pending-row' : ''}" data-resident-id="${esc(row.id)}">
         <td>${esc(row.id)}</td>
         <td>${photo}</td>
         <td>${esc(row.national_id) || '-'}</td>
@@ -180,7 +214,6 @@
     if (isSaving) return;
     const row = rows.find(item => String(item.id) === String(id));
     if (!row) return;
-
     const savedValue = row.has_voted === true;
     const nextValue = !currentVotedValue(row);
     if (nextValue === savedValue) pending.delete(String(id));
@@ -200,7 +233,7 @@
       state.textContent = `${pending.size} pending change${pending.size === 1 ? '' : 's'}`;
       state.dataset.state = 'pending';
     } else {
-      state.textContent = 'No pending changes';
+      state.textContent = 'Ready';
       state.dataset.state = 'saved';
     }
   }
@@ -210,14 +243,11 @@
     isSaving = true;
     updateSaveControls();
     render();
-
-    const changes = [...pending.entries()];
     const failed = [];
 
-    for (const [id, hasVoted] of changes) {
+    for (const [id, hasVoted] of [...pending.entries()]) {
       const votedAt = hasVoted ? new Date().toISOString() : null;
-      const { error } = await db
-        .from(table)
+      const { error } = await db.from(table)
         .update({ has_voted: hasVoted, voted_at: votedAt })
         .eq('id', Number(id))
         .eq('party', 'PNC');
@@ -226,7 +256,6 @@
         failed.push({ id, message: error.message });
         continue;
       }
-
       const row = rows.find(item => String(item.id) === String(id));
       if (row) {
         row.has_voted = hasVoted;
@@ -237,12 +266,11 @@
 
     isSaving = false;
     render();
-
     const state = document.getElementById('saveState');
     if (failed.length) {
       state.textContent = `${failed.length} change${failed.length === 1 ? '' : 's'} failed`;
       state.dataset.state = 'error';
-      alert(`Some changes were not saved:\n${failed.map(item => `ID ${item.id}: ${item.message}`).join('\n')}`);
+      alert('Some vote changes could not be saved. Please try again.');
     } else {
       state.textContent = 'All changes saved';
       state.dataset.state = 'saved';
@@ -250,8 +278,7 @@
   }
 
   function csvCell(value) {
-    const valueText = String(value ?? '');
-    return `"${valueText.replace(/"/g, '""')}"`;
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
   }
 
   function exportFilteredCsv() {
@@ -260,42 +287,27 @@
       alert('There are no filtered residents to export.');
       return;
     }
-
-    const headers = [
-      'ID', 'ID Number', 'Name', 'Official Address', 'Living Now',
-      'Mobile', 'Sex', 'Age', 'Assignment Status', 'Assignees',
-      'Vote Status', 'Voted At'
-    ];
-
+    const headers = ['ID','ID Number','Name','Official Address','Living Now','Mobile','Sex','Age','Assignment Status','Assignees','Vote Status','Voted At'];
     const lines = [headers.map(csvCell).join(',')];
     list.forEach(row => {
       const voted = currentVotedValue(row);
-      const votedAt = voted ? (pending.has(String(row.id)) ? 'Pending save' : formatSavedTime(row.voted_at)) : '';
       const names = assignmentNames(row);
       lines.push([
-        row.id,
-        row.national_id,
-        row.name,
-        row.house,
-        row.lives_in || row.living_place || 'Not recorded',
-        row.phone,
-        row.sex,
-        row.age,
-        names.length ? 'Assigned' : 'Unassigned',
-        names.join(', '),
-        voted ? 'Voted' : 'Not Yet',
-        votedAt
+        row.id, row.national_id, row.name, row.house,
+        row.lives_in || row.living_place || 'Not recorded', row.phone,
+        row.sex, row.age,
+        assignmentFiltersAvailable ? (names.length ? 'Assigned' : 'Unassigned') : 'Unavailable',
+        names.join(', '), voted ? 'Voted' : 'Not Yet',
+        voted ? (pending.has(String(row.id)) ? 'Pending save' : formatSavedTime(row.voted_at)) : ''
       ].map(csvCell).join(','));
     });
-
     const status = document.getElementById('statusFilter').value.toLowerCase();
     const date = new Date().toISOString().slice(0, 10);
-    const filename = `pnc-live-${status}-${date}.csv`;
     const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = filename;
+    link.download = `pnc-live-${status}-${date}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -317,7 +329,6 @@
       toggleVoteStatus(toggle.dataset.toggleVote);
       return;
     }
-
     const card = event.target.closest('[data-status-card]');
     if (card) {
       document.getElementById('statusFilter').value = card.dataset.statusCard;
@@ -325,7 +336,6 @@
       document.querySelector('.live-table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
-
     if (event.target.closest('#exportFiltered')) exportFilteredCsv();
     if (event.target.closest('#saveChanges')) saveChanges();
     if (event.target.closest('#clearFilters')) clearFilters();
@@ -341,16 +351,20 @@
     event.returnValue = '';
   });
 
-  Promise.all([loadResidents(), loadAssignments()])
-    .then(() => {
+  loadResidents()
+    .then(async () => {
+      await loadAssignmentsOptional();
       populateFilterOptions();
       render();
     })
     .catch(error => {
       console.error('PNC live turnout load failed:', error);
-      document.getElementById('residentRows').innerHTML = `<tr><td colspan="10" class="no-results">${esc(error.message)}</td></tr>`;
+      document.getElementById('residentRows').innerHTML = '<tr><td colspan="10" class="no-results">Residents could not be loaded. Please refresh the page or check the connection.</td></tr>';
+      document.getElementById('totalCount').textContent = '0';
+      document.getElementById('votedCount').textContent = '0';
+      document.getElementById('notVotedCount').textContent = '0';
       const state = document.getElementById('saveState');
-      state.textContent = 'Load failed';
+      state.textContent = 'Connection problem';
       state.dataset.state = 'error';
     });
 })();
