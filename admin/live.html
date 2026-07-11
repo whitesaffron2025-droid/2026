@@ -29,16 +29,10 @@
 
     <section class="live-toolbar">
       <select id="addressFilter" aria-label="Official address filter"><option value="ALL">All Addresses</option></select>
-      <select id="assignmentFilter" aria-label="Assignment status filter">
-        <option value="ALL">All Assignments</option><option value="ASSIGNED">Assigned</option><option value="UNASSIGNED">Unassigned</option>
-      </select>
-      <select id="campaignVoteFilter" aria-label="Campaign vote status filter">
-        <option value="ALL">All Vote Statuses</option><option value="will-vote">Will Vote</option><option value="not-vote">Not Vote</option><option value="not-decided">Not Decided</option>
-      </select>
+      <select id="assignmentFilter" aria-label="Assignment status filter"><option value="ALL">All Assignments</option><option value="ASSIGNED">Assigned</option><option value="UNASSIGNED">Unassigned</option></select>
+      <select id="campaignVoteFilter" aria-label="Campaign vote status filter"><option value="ALL">All Vote Statuses</option><option value="will-vote">Will Vote</option><option value="not-vote">Not Vote</option><option value="not-decided">Not Decided</option></select>
       <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place or mobile">
-      <select id="statusFilter" aria-label="Live turnout filter">
-        <option value="ALL">All Turnout Statuses</option><option value="VOTED">Voted</option><option value="NOT_VOTED">Not Yet</option>
-      </select>
+      <select id="statusFilter" aria-label="Live turnout filter"><option value="ALL">All Turnout Statuses</option><option value="VOTED">Voted</option><option value="NOT_VOTED">Not Yet</option></select>
       <button id="clearFilters" type="button" class="btn secondary">Clear</button>
       <button id="exportFiltered" type="button" class="btn secondary">Export Filtered CSV</button>
       <button id="sharePreview" type="button" class="btn secondary">Share Preview</button>
@@ -48,17 +42,12 @@
 
     <section class="live-view-bar" aria-label="Resident view">
       <strong>Resident View</strong>
-      <div class="live-view-toggle">
-        <button id="liveGalleryView" type="button" aria-pressed="false">Gallery</button>
-        <button id="liveListView" type="button" class="active" aria-pressed="true">List</button>
-      </div>
+      <div class="live-view-toggle"><button id="liveGalleryView" type="button" aria-pressed="false">Gallery</button><button id="liveListView" type="button" class="active" aria-pressed="true">List</button></div>
     </section>
 
     <section class="live-table-wrap">
       <table class="live-table">
-        <colgroup>
-          <col class="col-id"><col class="col-photo"><col class="col-id-number"><col class="col-name"><col class="col-address"><col class="col-living"><col class="col-mobile"><col class="col-sex"><col class="col-age"><col class="col-status">
-        </colgroup>
+        <colgroup><col class="col-id"><col class="col-photo"><col class="col-id-number"><col class="col-name"><col class="col-address"><col class="col-living"><col class="col-mobile"><col class="col-sex"><col class="col-age"><col class="col-status"></colgroup>
         <thead><tr><th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Vote Status</th></tr></thead>
         <tbody id="residentRows"><tr><td colspan="10">Loading PNC residents…</td></tr></tbody>
       </table>
@@ -71,7 +60,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js?v=20"></script>
   <script src="js/live-checkin.js?v=9"></script>
-  <script src="js/live-share-preview.js?v=2"></script>
+  <script src="js/live-share-preview.js?v=3"></script>
   <script src="js/live-view-toggle.js?v=1"></script>
 </body>
 </html>
