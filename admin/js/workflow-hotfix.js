@@ -1,4 +1,4 @@
-/* MODULE: Campaign Workflow Hotfix | VERSION: 1.1.0 | BUILD: 2026.07.11 */
+/* MODULE: Campaign Workflow Hotfix | VERSION: 1.1.1 | BUILD: 2026.07.11 */
 (() => {
   'use strict';
 
@@ -6,6 +6,7 @@
   let client = null;
   let assignmentTableAvailable = true;
   let defaultPartyApplied = false;
+  let observerFrame = 0;
 
   function getClient() {
     if (client) return client;
@@ -56,8 +57,16 @@
     state.party = 'PNC';
     state.visible = 28;
     const select = document.getElementById('globalParty');
-    if (select) select.value = 'PNC';
-    select?.dispatchEvent(new Event('change', { bubbles: true }));
+    if (select) {
+      select.value = 'PNC';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function setTextIfChanged(element, value) {
+    if (!element) return;
+    const next = String(value);
+    if (element.textContent !== next) element.textContent = next;
   }
 
   function patchAssignSummary() {
@@ -71,10 +80,9 @@
     const values = [rows.length, rows.length - assigned, assigned, completed];
     const cards = document.querySelectorAll('.stats-grid .stat-card strong');
     values.forEach((value, index) => {
-      if (cards[index]) cards[index].textContent = value.toLocaleString();
+      setTextIfChanged(cards[index], value.toLocaleString());
     });
-    const pill = document.querySelector('.record-pill');
-    if (pill) pill.textContent = `${rows.length.toLocaleString()} records`;
+    setTextIfChanged(document.querySelector('.record-pill'), `${rows.length.toLocaleString()} records`);
   }
 
   async function insertAssignmentHistory(residentId, assignee, assignedAt) {
@@ -176,10 +184,16 @@
     }, 100);
   }
 
-  const observer = new MutationObserver(() => {
-    applyDefaultParty();
-    patchAssignSummary();
-  });
+  function scheduleObserverWork() {
+    if (observerFrame) return;
+    observerFrame = requestAnimationFrame(() => {
+      observerFrame = 0;
+      applyDefaultParty();
+      patchAssignSummary();
+    });
+  }
+
+  const observer = new MutationObserver(scheduleObserverWork);
 
   document.addEventListener('submit', validateAssignmentForm, true);
   document.addEventListener('DOMContentLoaded', () => {
