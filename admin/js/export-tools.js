@@ -1,4 +1,4 @@
-/* MODULE: Section Summary Export Tools | VERSION: 1.0.0 */
+/* MODULE: Section Summary Export Tools | VERSION: 1.1.0 */
 (() => {
   'use strict';
 
@@ -20,24 +20,48 @@
       .filter(row => row.metric && row.value);
   }
 
+  function activeFilters() {
+    const filters = [];
+    const party = document.getElementById('globalParty');
+    if (party?.selectedOptions?.[0]) filters.push(['Party', text(party.selectedOptions[0].textContent)]);
+
+    document.querySelectorAll('.filter-bar label').forEach(label => {
+      const name = text(label.childNodes[0]?.textContent);
+      const control = label.querySelector('select,input');
+      if (!name || !control) return;
+      let value = '';
+      if (control.tagName === 'SELECT') value = text(control.selectedOptions?.[0]?.textContent);
+      else value = text(control.value);
+      if (!value || /^all\b/i.test(value)) return;
+      filters.push([name, value]);
+    });
+
+    return filters;
+  }
+
   function filename(extension) {
     const section = currentSectionTitle().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'summary';
-    const date = new Date().toISOString().slice(0, 10);
-    return `${section}-${date}.${extension}`;
+    return `${section}-summary-${new Date().toISOString().slice(0, 10)}.${extension}`;
+  }
+
+  function csvCell(value) {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
   }
 
   function downloadCsv() {
     const rows = summaryRows();
     if (!rows.length) return alert('No summary data is available to export.');
+    const filters = activeFilters();
     const csv = [
+      ['Export Type', 'Filtered summary only'],
       ['Section', currentSectionTitle()],
       ['Generated', new Date().toLocaleString('en-GB')],
+      ...filters.map(([name, value]) => [`Filter: ${name}`, value]),
       [],
       ['Metric', 'Value'],
       ...rows.map(row => [row.metric, row.value])
-    ].map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    ].map(row => row.map(csvCell).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = filename('csv');
@@ -45,14 +69,17 @@
     URL.revokeObjectURL(url);
   }
 
-  function printableHtml() {
-    const rows = summaryRows();
-    const body = rows.map(row => `<tr><th>${escapeHtml(row.metric)}</th><td>${escapeHtml(row.value)}</td></tr>`).join('');
-    return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(currentSectionTitle())}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#111}h1{margin:0 0 8px}p{color:#555;margin:0 0 24px}table{border-collapse:collapse;width:100%;max-width:720px}th,td{border:1px solid #bbb;padding:12px;text-align:left}th{background:#f3f4f6;width:60%}@media print{button{display:none}}</style></head><body><h1>${escapeHtml(currentSectionTitle())}</h1><p>Generated ${escapeHtml(new Date().toLocaleString('en-GB'))}</p><table>${body}</table></body></html>`;
-  }
-
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  }
+
+  function printableHtml() {
+    const filters = activeFilters();
+    const filterRows = filters.length
+      ? filters.map(([name, value]) => `<tr><th>Filter: ${escapeHtml(name)}</th><td>${escapeHtml(value)}</td></tr>`).join('')
+      : '<tr><th>Filters</th><td>None</td></tr>';
+    const metricRows = summaryRows().map(row => `<tr><th>${escapeHtml(row.metric)}</th><td>${escapeHtml(row.value)}</td></tr>`).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(currentSectionTitle())}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#111}h1{margin:0 0 8px}p{color:#555;margin:0 0 24px}table{border-collapse:collapse;width:100%;max-width:760px;margin-bottom:22px}th,td{border:1px solid #bbb;padding:12px;text-align:left}th{background:#f3f4f6;width:55%}</style></head><body><h1>${escapeHtml(currentSectionTitle())} Summary</h1><p>Filtered summary only · Generated ${escapeHtml(new Date().toLocaleString('en-GB'))}</p><table>${filterRows}</table><table>${metricRows}</table></body></html>`;
   }
 
   function printSummary() {
@@ -66,15 +93,20 @@
   }
 
   async function shareSummary() {
-    const rows = summaryRows();
-    const lines = [currentSectionTitle(), ...rows.map(row => `${row.metric}: ${row.value}`), location.href];
+    const filters = activeFilters();
+    const lines = [
+      `${currentSectionTitle()} Summary`,
+      'Filtered summary only',
+      ...filters.map(([name, value]) => `${name}: ${value}`),
+      ...summaryRows().map(row => `${row.metric}: ${row.value}`),
+      location.href
+    ];
     const shareText = lines.join('\n');
     try {
-      if (navigator.share) {
-        await navigator.share({ title: currentSectionTitle(), text: shareText, url: location.href });
-      } else {
+      if (navigator.share) await navigator.share({ title: currentSectionTitle(), text: shareText, url: location.href });
+      else {
         await navigator.clipboard.writeText(shareText);
-        alert('Summary and link copied.');
+        alert('Filtered summary and link copied.');
       }
     } catch (error) {
       if (error?.name !== 'AbortError') prompt('Copy this summary:', shareText);
@@ -87,7 +119,7 @@
     const tools = document.createElement('div');
     tools.id = 'sectionExportTools';
     tools.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto';
-    tools.innerHTML = '<button type="button" class="btn secondary" data-summary-export="csv">Excel</button><button type="button" class="btn secondary" data-summary-export="print">PDF / Print</button><button type="button" class="btn secondary" data-summary-export="share">Share</button>';
+    tools.innerHTML = '<button type="button" class="btn secondary" data-summary-export="csv">Export Summary</button><button type="button" class="btn secondary" data-summary-export="print">Print Summary</button><button type="button" class="btn secondary" data-summary-export="share">Share Summary</button>';
     head.appendChild(tools);
   }
 
