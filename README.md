@@ -1,141 +1,222 @@
 # 2026 Campaign Manager
 
-Stable campaign-management application for the 2026 election workflow.
+Campaign-management application for the 2026 election workflow.
 
-## Current stable build
+## Current build
 
-- Build: `2026.07.10-clean-stable`
+- Build: `2026.07.11-live-turnout`
 - Frontend: HTML5, CSS3, Vanilla JavaScript
 - Backend: Supabase Auth + PostgreSQL
 - Hosting: GitHub Pages
-- Master resident table: `public."2026"`
-- Assignment history table: `public.resident_assignments`
+- Main resident table: `public.campaign`
+- Assignment table: `public.resident_assignments`
+
+## Main links
+
+- Landing page: `/index.html`
+- Public resident view: `/public.html`
+- Shared assignment page: `/shared.html`
+- Admin workspace: `/admin/`
+- PNC Live Turnout: `/admin/live.html`
 
 ## Architecture
 
-Residents is the single source of truth. Assign, Calls, Votes, Door to Door, and Transport are workflow views of the same resident records. No workflow stores a duplicate resident record.
+The `campaign` table is the resident source of truth. The admin sections show workflow views of the same resident records. Assignment records are stored separately in `resident_assignments`.
 
 ```text
-Supabase public."2026"
+Supabase public.campaign
         │
-        ├── Residents Master
+        ├── Dashboard
+        ├── Residents
         ├── Assign
         ├── Calls
         ├── Votes
         ├── Visits
-        └── Transport
+        ├── Transport
+        └── PNC Live Turnout
 ```
 
-Assignment history is stored separately so one resident can have multiple assignees without overwriting earlier assignment records.
+## Admin resident table
 
-## Active pages
+The standard resident list column order is:
 
-- `/index.html` — visual landing page
-- `/public.html` — read-only public resident gallery
-- `/shared.html` — filtered self-assignment workspace
-- `/admin/` — authenticated admin master workspace
+```text
+ID | Photo | ID Number | Name | Official Address | Living Now | Mobile | Sex | Age | Action
+```
 
-## Active admin modules
+- `ID` is the Supabase database row ID.
+- `ID Number` is the resident National ID.
+- Residents remain the master editing page.
 
-The current `admin/index.html` intentionally loads only these JavaScript modules:
+## PNC Live Turnout page
+
+Path:
+
+```text
+/admin/live.html
+```
+
+Purpose: election-day check-in and turnout tracking for PNC residents only.
+
+### Data scope
+
+The page loads only rows where:
+
+```text
+party = PNC
+```
+
+It does not show MDP or No Party residents.
+
+### Displayed columns
+
+```text
+ID | Photo | ID Number | Name | Official Address | Living Now | Mobile | Sex | Age | Vote Status
+```
+
+### Dashboard cards
+
+- `Voted` — filters the table to voted residents.
+- `Not Yet` — filters the table to residents not yet marked voted.
+- `PNC Total` — displays all PNC residents.
+
+The selected card stays synchronized with the status dropdown.
+
+### Search
+
+Searches the loaded PNC list using:
+
+- Database ID
+- National ID
+- Name
+- Official address
+- Current living place
+- Mobile number
+- Sex
+- Age
+
+### Turnout workflow
+
+1. Click the resident's Vote Status button.
+2. The row changes to `Voted` or `Not Yet` locally.
+3. The row is marked `Pending save`.
+4. Click `Save Changes`.
+5. Supabase updates the matching PNC row.
+
+Saved fields:
+
+```text
+has_voted
+voted_at
+```
+
+When marked voted:
+
+```text
+has_voted = true
+voted_at = current timestamp
+```
+
+When changed back to not voted:
+
+```text
+has_voted = false
+voted_at = null
+```
+
+The page warns before closing when pending changes have not been saved.
+
+### Filtered CSV export
+
+`Export Filtered CSV` exports exactly the current visible PNC result after applying search and vote-status filters.
+
+CSV column order:
+
+```text
+ID | ID Number | Name | Official Address | Living Now | Mobile | Sex | Age | Vote Status | Voted At
+```
+
+### Live page runtime files
+
+```text
+admin/live.html
+admin/js/live-checkin.js
+admin/css/live-checkin.css
+```
+
+## Current admin loader
+
+`admin/index.html` currently loads:
 
 ```text
 admin/js/app.js
+admin/js/resident-table-columns.js
+admin/js/live-nav.js
+admin/js/workflow-hotfix.js
 admin/js/dashboard-modern.js
+admin/js/photo-click-fix.js
+admin/js/export-tools.js
+admin/js/stat-card-filters.js
+admin/js/mobile-print-fix.js
+admin/js/filter-export-layout.js
 ```
 
-The current active workflow styling is:
-
-```text
-admin/css/workflow-clean.css
-```
-
-Older patch modules remain in the repository only as historical files and are not loaded by the stable admin build.
-
-## Field permissions
-
-| Field | Residents | Assign | Calls | Votes | Visits | Transport |
-|---|---:|---:|---:|---:|---:|---:|
-| Name | Locked | Locked | Locked | Locked | Locked | Locked |
-| National ID | Locked | Locked | Locked | Locked | Locked | Locked |
-| Official Address | Locked | Locked | Locked | Locked | Locked | Locked |
-| Sex | Locked | Locked | Locked | Locked | Locked | Locked |
-| Age | Locked | Locked | Locked | Locked | Locked | Locked |
-| Phone | Editable | Read-only | Read-only | Read-only | Read-only | Read-only |
-| Current Living Place | Editable | Read-only | Read-only | Read-only | Editable | Read-only |
-| Suggested Phone Number | — | Editable suggestion | Editable suggestion | Editable suggestion | Editable suggestion | Editable suggestion |
-
-A suggested phone number does not overwrite the master `phone` field. The actual phone number is changed only from Residents Master.
-
-## Section ownership
+## Field ownership
 
 ### Residents
 
-- Gallery and list views
-- Party, address, sex, and search filtering
-- Edits only phone, current living place, and remarks
+- Phone: editable
+- Current living place: editable
+- Remarks: editable
+- Identity fields: locked
 
 ### Assign
 
-- Generates filtered self-assignment links
-- Shows all assignee names and assignment times from `resident_assignments`
-- Supports one resident being assigned to multiple people
+- Reads assignment rows from `resident_assignments`
+- Supports multiple assignees per resident
 
 ### Calls
 
-- Updates call status, call outcome, agent, notes, call attempts, and last-call time
-- Shows phone and current living place as read-only
+- Updates call workflow fields
 
 ### Votes
 
-- Updates vote status, support level, and remarks
-- Shows phone and current living place as read-only
+- Updates vote intention/support workflow fields
 
-### Door to Door
+### Visits
 
-- Updates visit status, current living place, and remarks
-- Phone remains read-only
+- Updates visit and living-place workflow fields
 
 ### Transport
 
-- Updates transport status and remarks
-- Phone and current living place remain read-only
+- Updates transport workflow fields
 
-## Party filtering
+### Live Turnout
 
-The global Party filter uses one consistent classification:
-
-```text
-All
-PNC
-MDP
-No Party
-```
-
-Any value other than exact `PNC` or `MDP` is classified as `No Party`.
-
-## Dashboard logic
-
-- Dashboard totals respect the selected Party filter
-- Percentages use `matching records ÷ selected total × 100`
-- Today's Call Goal uses `last_call_at` from the current calendar day
-- Clicking a house opens Residents filtered to that official address
-- Assignment feed reads from `resident_assignments`
+- Updates only `has_voted` and `voted_at`
+- Restricted in the page logic to PNC rows
 
 ## Security
 
-- Admin uses Supabase email/password authentication
-- Passwords are not stored in localStorage
-- Shared assignment users must authenticate before saving
-- Supabase Row Level Security should remain enabled
-- The public resident page is read-only
+- Admin uses Supabase authentication.
+- Passwords must not be stored in localStorage.
+- Supabase Row Level Security should remain enabled.
+- Public pages remain read-only unless explicitly designed for authenticated saving.
 
-## Backup and SHA manifest
+## Backup and SHA documents
 
 See:
 
 ```text
 docs/FILE-STRUCTURE-BACKUP.md
+SHAS.md
 ```
 
-That file records the active structure, current module versions, and GitHub blob SHAs for the stable build.
+## Permanent change-control rule
+
+After any completed website change:
+
+1. Update `README.md` when behavior or architecture changes.
+2. Update `docs/FILE-STRUCTURE-BACKUP.md`.
+3. Update `SHAS.md` with current file and commit references.
+4. Do not delete or remove a file, page, feature, database field, or module without asking the owner first.
