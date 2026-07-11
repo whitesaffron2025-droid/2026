@@ -1,4 +1,4 @@
-/* MODULE: Resident Selection Assignment Workflow | VERSION: 1.0.0 */
+/* MODULE: Resident Selection Assignment Workflow | VERSION: 1.1.0 */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
   const selectedIds = new Set();
   let client = null;
   let observerQueued = false;
-  let activeAssignee = '';
+  let activeAssignee = text(localStorage.getItem('campaign_active_assignee'));
 
   function db() {
     if (client) return client;
@@ -26,15 +26,44 @@
     return app()?.state?.rows?.find(row => String(row.id) === String(id));
   }
 
-  function visibleResidentIds() {
-    return [...document.querySelectorAll('[data-edit-section="residents"][data-edit-id]')]
-      .map(button => String(button.dataset.editId));
+  function assignmentsForResident(id) {
+    return (app()?.state?.assignments || []).filter(
+      item => String(item.resident_id) === String(id)
+    );
+  }
+
+  function assignmentNames(id) {
+    return [...new Set(assignmentsForResident(id).map(item => text(item.assignee_name)).filter(Boolean))];
+  }
+
+  function assigneeOptions() {
+    return [...new Set((app()?.state?.assignments || [])
+      .map(item => text(item.assignee_name))
+      .filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  function assignedBadge(id) {
+    const names = assignmentNames(id);
+    if (!names.length) return '';
+    return `<span class="resident-assigned-badge" title="${names.join(', ').replace(/"/g, '&quot;')}">Assigned: ${names.join(', ')}</span>`;
   }
 
   function addResidentSelectionUi() {
     if (app()?.state?.section !== 'residents') return;
     const panel = document.querySelector('#pageContent .panel');
     if (!panel) return;
+
+    if (!document.getElementById('residentSelectionStyle')) {
+      const style = document.createElement('style');
+      style.id = 'residentSelectionStyle';
+      style.textContent = `
+        .resident-assigned-badge{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;line-height:1.25}
+        .resident-selection-cell{display:flex;align-items:center;gap:8px}
+        #residentSelectionBar input{min-width:210px}
+      `;
+      document.head.appendChild(style);
+    }
 
     if (!document.getElementById('residentSelectionBar')) {
       const bar = document.createElement('div');
@@ -43,51 +72,70 @@
       bar.innerHTML = `
         <div>
           <strong>Select residents and save</strong>
-          <small>Selected residents are stored in resident_assignments and shown on the Assign page.</small>
+          <small>Choose an assignee to reload saved selections. Green labels show every saved assignment.</small>
         </div>
         <label style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span>Assignee</span>
-          <input id="residentSelectionAssignee" value="${activeAssignee.replace(/"/g, '&quot;')}" placeholder="Write assignee name" autocomplete="off">
+          <input id="residentSelectionAssignee" list="residentAssigneeList" value="${activeAssignee.replace(/"/g, '&quot;')}" placeholder="Write or choose assignee" autocomplete="off">
+          <datalist id="residentAssigneeList">${assigneeOptions().map(name => `<option value="${name.replace(/"/g, '&quot;')}"></option>`).join('')}</datalist>
+          <button id="loadResidentSelection" type="button" class="btn secondary">Load Saved</button>
           <button id="saveResidentSelection" type="button" class="btn primary">Save Selection</button>
           <span id="residentSelectionCount">${selectedIds.size} selected</span>
         </label>`;
       panel.prepend(bar);
     }
 
+    const list = document.getElementById('residentAssigneeList');
+    if (list) list.innerHTML = assigneeOptions().map(name => `<option value="${name.replace(/"/g, '&quot;')}"></option>`).join('');
+
     document.querySelectorAll('.resident-gallery-card').forEach(card => {
-      if (card.querySelector('.resident-select-checkbox')) return;
-      const edit = card.querySelector('[data-edit-id]');
+      const edit = card.querySelector('[data-edit-section="residents"][data-edit-id]');
       if (!edit) return;
       const id = String(edit.dataset.editId);
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.className = 'resident-select-checkbox';
-      box.dataset.residentId = id;
-      box.checked = selectedIds.has(id);
-      box.setAttribute('aria-label', 'Select resident');
-      box.style.cssText = 'position:absolute;top:10px;left:10px;width:22px;height:22px;z-index:3';
-      card.style.position = 'relative';
-      card.prepend(box);
+
+      if (!card.querySelector('.resident-select-checkbox')) {
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'resident-select-checkbox';
+        box.dataset.residentId = id;
+        box.setAttribute('aria-label', 'Select resident');
+        box.style.cssText = 'position:absolute;top:10px;left:10px;width:22px;height:22px;z-index:3';
+        card.style.position = 'relative';
+        card.prepend(box);
+      }
+
+      const body = card.querySelector('.resident-gallery-body');
+      if (body) {
+        body.querySelector('.resident-assigned-badge')?.remove();
+        body.insertAdjacentHTML('beforeend', assignedBadge(id));
+      }
     });
 
     document.querySelectorAll('.data-table tbody tr').forEach(row => {
-      if (row.querySelector('.resident-select-checkbox')) return;
       const edit = row.querySelector('[data-edit-section="residents"][data-edit-id]');
       if (!edit) return;
       const id = String(edit.dataset.editId);
       const firstCell = row.querySelector('td');
+      const nameCell = row.querySelectorAll('td')[1];
       if (!firstCell) return;
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.className = 'resident-select-checkbox';
-      box.dataset.residentId = id;
-      box.checked = selectedIds.has(id);
-      box.setAttribute('aria-label', 'Select resident');
-      box.style.cssText = 'width:20px;height:20px;margin-right:10px;vertical-align:middle';
-      firstCell.prepend(box);
+
+      if (!row.querySelector('.resident-select-checkbox')) {
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'resident-select-checkbox';
+        box.dataset.residentId = id;
+        box.setAttribute('aria-label', 'Select resident');
+        box.style.cssText = 'width:20px;height:20px;margin-right:10px;vertical-align:middle';
+        firstCell.prepend(box);
+      }
+
+      if (nameCell) {
+        nameCell.querySelector('.resident-assigned-badge')?.remove();
+        nameCell.insertAdjacentHTML('beforeend', assignedBadge(id));
+      }
     });
 
-    updateSelectionCount();
+    syncCheckboxes();
   }
 
   function updateSelectionCount() {
@@ -98,6 +146,11 @@
   async function loadAssigneeSelection(name) {
     activeAssignee = text(name);
     selectedIds.clear();
+    localStorage.setItem('campaign_active_assignee', activeAssignee);
+
+    const input = document.getElementById('residentSelectionAssignee');
+    if (input && input.value !== activeAssignee) input.value = activeAssignee;
+
     if (!activeAssignee) {
       syncCheckboxes();
       return;
@@ -125,7 +178,7 @@
     const input = document.getElementById('residentSelectionAssignee');
     const assignee = text(input?.value);
     if (!assignee) {
-      alert('Write the assignee name before saving.');
+      alert('Write or choose the assignee name before saving.');
       input?.focus();
       return;
     }
@@ -147,7 +200,7 @@
       if (existingError) throw existingError;
 
       const existingIds = new Set((existing || []).map(row => String(row.resident_id)));
-      const nextIds = new Set([...selectedIds]);
+      const nextIds = new Set(selectedIds);
       const removeIds = [...existingIds].filter(id => !nextIds.has(id));
       const addIds = [...nextIds].filter(id => !existingIds.has(id));
 
@@ -179,7 +232,10 @@
       }
 
       activeAssignee = assignee;
+      localStorage.setItem('campaign_active_assignee', activeAssignee);
       await refreshAssignmentState();
+      await loadAssigneeSelection(activeAssignee);
+      queueApply();
       alert(`Saved ${selectedIds.size} resident${selectedIds.size === 1 ? '' : 's'} for ${assignee}.`);
     } catch (error) {
       console.error('Save selection failed:', error);
@@ -200,7 +256,8 @@
       .from('resident_assignments')
       .select('resident_id,assignee_name,assigned_at')
       .order('assigned_at', { ascending: false });
-    if (!error) application.state.assignments = data || [];
+    if (error) throw error;
+    application.state.assignments = data || [];
   }
 
   function renderAssignPageFromTable() {
@@ -240,12 +297,6 @@
 
     const pill = document.querySelector('#pageContent .record-pill');
     if (pill) pill.textContent = `${rows.length.toLocaleString()} records`;
-    const stats = document.querySelectorAll('#pageContent .stats-grid .stat-card strong');
-    const uniqueResidents = new Set(rows.map(item => String(item.resident.id)));
-    if (stats[0]) stats[0].textContent = uniqueResidents.size.toLocaleString();
-    if (stats[1]) stats[1].textContent = '0';
-    if (stats[2]) stats[2].textContent = uniqueResidents.size.toLocaleString();
-    if (stats[3]) stats[3].textContent = rows.filter(item => text(item.resident.reach_status) === 'reached').length.toLocaleString();
   }
 
   function applyWorkflow() {
@@ -278,6 +329,10 @@
   });
 
   document.addEventListener('click', event => {
+    if (event.target.closest('#loadResidentSelection')) {
+      const name = document.getElementById('residentSelectionAssignee')?.value;
+      loadAssigneeSelection(name).catch(error => alert(error.message));
+    }
     if (event.target.closest('#saveResidentSelection')) saveSelection();
   });
 
@@ -285,8 +340,13 @@
     const root = document.getElementById('adminApp') || document.body;
     new MutationObserver(queueApply).observe(root, { childList: true, subtree: true });
     setTimeout(async () => {
-      await refreshAssignmentState();
-      queueApply();
+      try {
+        await refreshAssignmentState();
+        if (activeAssignee) await loadAssigneeSelection(activeAssignee);
+        queueApply();
+      } catch (error) {
+        console.error('Assignment load failed:', error);
+      }
     }, 500);
   });
 })();
