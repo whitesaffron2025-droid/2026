@@ -3,42 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Live Check-in · 2026 Campaign Manager</title>
+  <title>Live Turnout · 2026 Campaign Manager</title>
   <link rel="stylesheet" href="css/admin.css?v=20">
-  <link rel="stylesheet" href="css/live-checkin.css?v=1">
+  <link rel="stylesheet" href="css/live-checkin.css?v=2">
 </head>
 <body>
   <header class="live-header">
-    <div><strong>2026 Campaign Manager</strong><small>Live voter check-in</small></div>
+    <div class="live-brand"><strong>2026 Campaign Manager</strong><small>Live voter turnout</small></div>
     <nav><a href="index.html">Residents</a><a class="active" href="live.html">Live</a></nav>
   </header>
+
   <main class="live-shell">
-    <section class="live-toolbar">
+    <section class="live-top">
       <div>
-        <h1>Live Check-in</h1>
-        <p>Click a resident row to change Voted / Not Voted, then press Save Changes.</p>
+        <h1>Vilimale Dhaaira · Turnout</h1>
+        <p>Use the status button to update a resident. Every change saves immediately to Supabase.</p>
       </div>
-      <div class="live-actions">
-        <select id="partyFilter"><option value="ALL">All parties</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select>
-        <input id="searchInput" placeholder="Search ID, ID number, name, address or phone">
-        <button id="saveChanges" class="btn primary" type="button">Save Changes</button>
-        <span id="pendingCount">0 pending</span>
+      <div class="live-stats">
+        <div class="stat voted"><strong id="votedCount">0</strong><span>Voted</span></div>
+        <div class="stat not-yet"><strong id="notVotedCount">0</strong><span>Not Yet</span></div>
+        <div class="stat total"><strong id="totalCount">0</strong><span>Total</span></div>
       </div>
     </section>
-    <section class="live-stats">
-      <div><strong id="totalCount">0</strong><span>Total</span></div>
-      <div><strong id="votedCount">0</strong><span>Voted</span></div>
-      <div><strong id="notVotedCount">0</strong><span>Not Voted</span></div>
+
+    <section class="live-toolbar">
+      <select id="partyFilter" aria-label="Party filter">
+        <option value="ALL">All parties</option>
+        <option value="PNC">PNC</option>
+        <option value="MDP">MDP</option>
+      </select>
+      <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place or mobile">
+      <select id="statusFilter" aria-label="Status filter">
+        <option value="ALL">All statuses</option>
+        <option value="VOTED">Voted</option>
+        <option value="NOT_VOTED">Not Yet</option>
+      </select>
+      <button id="clearFilters" type="button" class="btn secondary">Clear</button>
+      <span id="saveState" class="save-state">Ready</span>
     </section>
+
     <section class="live-table-wrap">
       <table class="live-table">
-        <thead><tr><th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Status</th></tr></thead>
+        <thead>
+          <tr>
+            <th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Vote Status</th>
+          </tr>
+        </thead>
         <tbody id="residentRows"><tr><td colspan="10">Loading residents…</td></tr></tbody>
       </table>
     </section>
+
+    <div class="footer-note">Click only the Vote Status button. Saved rows show the exact saved time.</div>
   </main>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js?v=20"></script>
-  <script src="js/live-checkin.js?v=1"></script>
+  <script src="js/live-checkin.js?v=2"></script>
 </body>
 </html>
