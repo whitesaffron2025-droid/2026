@@ -7,46 +7,33 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#111827;background:#f3f4f6}
-    body{padding:24px;background:#f3f4f6}
-    .container{max-width:980px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-    .header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}
-    h1{font-size:1.55rem;margin-bottom:4px}.sub{color:#6b7280;font-size:.92rem}
-    .header-actions,.toolbar,.add-section,.footer-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-    .stat-card{background:#f9fafb;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb}
-    .stat-card .num{font-size:1.8rem;font-weight:700}.stat-card .label{font-size:.75rem;color:#6b7280;text-transform:uppercase}
+    body{padding:24px;background:#f3f4f6}.container{max-width:980px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}h1{font-size:1.55rem;margin-bottom:4px}.sub{color:#6b7280;font-size:.92rem}
+    .header-actions,.toolbar,.add-section,.footer-actions{display:flex;gap:10px;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .stat-card{background:#f9fafb;border-radius:10px;padding:14px;text-align:center;border:1px solid #e5e7eb}.stat-card .num{font-size:1.8rem;font-weight:700}.stat-card .label{font-size:.75rem;color:#6b7280;text-transform:uppercase}
     .blue .num{color:#1a56db}.green .num{color:#059669}.orange .num{color:#d97706}.red .num{color:#dc2626}
-    .add-section{margin-bottom:16px}.add-section input,.toolbar input{flex:1;min-width:180px;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:1rem}
-    input:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
-    .btn{padding:10px 16px;border:none;border-radius:8px;font-size:.92rem;font-weight:600;cursor:pointer;transition:.2s}
-    .btn-primary{background:#1a56db;color:#fff}.btn-primary:hover{background:#1e40af}
-    .btn-success{background:#059669;color:#fff}.btn-success:hover{background:#047857}
-    .btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
-    .btn-secondary{background:#e5e7eb;color:#111827}.btn-secondary:hover{background:#d1d5db}
-    .btn-sm{padding:7px 12px;font-size:.82rem}
-    .toolbar{justify-content:space-between;align-items:center;margin-bottom:16px}
-    .table-wrap{overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px}
-    table{width:100%;border-collapse:collapse;font-size:.9rem}th{background:#f9fafb;text-align:left;padding:10px 14px;font-weight:600;border-bottom:1px solid #e5e7eb}td{padding:10px 14px;border-bottom:1px solid #f3f4f6}tr:last-child td{border-bottom:none}
-    .status-badge{display:inline-block;padding:3px 11px;border-radius:12px;font-size:.75rem;font-weight:700}.attended{background:#d1fae5;color:#065f46}.not-attended{background:#fef3c7;color:#92400e}
-    .empty{text-align:center;color:#6b7280;padding:30px 0}.footer-actions{justify-content:flex-end;margin-top:16px}.note{margin-top:12px;color:#6b7280;font-size:.82rem}.hidden{display:none}
+    .add-section{margin-bottom:16px}.add-section input,.toolbar input{flex:1;min-width:180px;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:1rem}input:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+    .btn{padding:10px 16px;border:none;border-radius:8px;font-size:.92rem;font-weight:600;cursor:pointer;transition:.2s}.btn:disabled{opacity:.55;cursor:not-allowed}.btn-primary{background:#1a56db;color:#fff}.btn-success{background:#059669;color:#fff}.btn-secondary{background:#e5e7eb;color:#111827}.btn-sm{padding:7px 12px;font-size:.82rem}
+    .toolbar{justify-content:space-between;align-items:center;margin-bottom:16px}.table-wrap{overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:.9rem}th{background:#f9fafb;text-align:left;padding:10px 14px;font-weight:600;border-bottom:1px solid #e5e7eb}td{padding:10px 14px;border-bottom:1px solid #f3f4f6}tr:last-child td{border-bottom:none}
+    .status-badge{display:inline-block;padding:3px 11px;border-radius:12px;font-size:.75rem;font-weight:700}.attended{background:#d1fae5;color:#065f46}.not-attended{background:#fef3c7;color:#92400e}.empty{text-align:center;color:#6b7280;padding:30px 12px}.footer-actions{justify-content:flex-end;margin-top:16px}.note{margin-top:12px;color:#6b7280;font-size:.82rem}.hidden{display:none}.message{display:none;margin:0 0 16px;padding:11px 13px;border-radius:8px;font-size:.9rem}.message.show{display:block}.message.error{background:#fee2e2;color:#991b1b}.message.ok{background:#dcfce7;color:#166534}
     @media(max-width:700px){body{padding:12px}.container{padding:16px}.stats{grid-template-columns:repeat(2,1fr)}.header-actions{width:100%}.header-actions .btn{flex:1}.add-section,.toolbar{flex-direction:column;align-items:stretch}.add-section input,.toolbar input{width:100%}}
-    @media print{body{padding:0;background:#fff}.container{max-width:none;box-shadow:none}.header-actions,.add-section,.toolbar,.footer-actions,.btn,.note{display:none!important}}
+    @media print{body{padding:0;background:#fff}.container{max-width:none;box-shadow:none}.header-actions,.add-section,.toolbar,.footer-actions,.btn,.note,.message{display:none!important}}
   </style>
 </head>
 <body>
   <main class="container">
     <header class="header">
-      <div>
-        <h1>📋 Community Event Check-In</h1>
-        <p class="sub">Simple attendee attendance tracking stored on this device.</p>
-      </div>
+      <div><h1>📋 Community Event Check-In</h1><p class="sub">Live attendance saved to Supabase.</p></div>
       <div class="header-actions">
+        <button class="btn btn-secondary" id="refreshBtn" type="button">Refresh</button>
         <button class="btn btn-secondary" id="importBtn" type="button">Import CSV</button>
         <button class="btn btn-secondary" id="exportBtn" type="button">Export Excel</button>
         <button class="btn btn-secondary" id="printBtn" type="button">Print / PDF</button>
         <input class="hidden" id="fileInput" type="file" accept=".csv,text/csv">
       </div>
     </header>
+
+    <div id="message" class="message"></div>
 
     <section class="stats">
       <div class="stat-card blue"><div class="num" id="total">0</div><div class="label">Total Attendees</div></div>
@@ -62,112 +49,90 @@
 
     <section class="toolbar">
       <input id="searchInput" type="search" placeholder="Search attendees...">
-      <button class="btn btn-secondary btn-sm" id="clearAllBtn" type="button">Clear All</button>
     </section>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Added</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody id="tableBody"></tbody>
+        <thead><tr><th>Name</th><th>Attended At</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="tableBody"><tr><td colspan="4" class="empty">Loading attendees…</td></tr></tbody>
       </table>
     </div>
 
-    <div class="footer-actions">
-      <button class="btn btn-secondary btn-sm" id="footerPrintBtn" type="button">🖨️ Print</button>
-    </div>
-    <p class="note">Import a CSV with a Name column, or add attendees manually. Attendance is saved automatically in this browser.</p>
+    <div class="footer-actions"><button class="btn btn-secondary btn-sm" id="footerPrintBtn" type="button">🖨️ Print</button></div>
+    <p class="note">Source: Supabase table <strong>event_attendees</strong>. Every attendance change is saved immediately.</p>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/config.js"></script>
   <script>
     (()=>{
       'use strict';
-      const KEY='community_event_attendees_v2';
-      let attendees=load();
-      let searchTerm='';
+      const cfg=window.CampaignConfig;
       const $=id=>document.getElementById(id);
+      let db=null,attendees=[],searchTerm='',busy=false;
 
-      function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
-      function save(){localStorage.setItem(KEY,JSON.stringify(attendees))}
       function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-      function makeId(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-      function stamp(){return new Date().toISOString()}
       function displayDate(value){return value?new Date(value).toLocaleString('en-GB'):'—'}
+      function showMessage(text,type='ok'){const el=$('message');el.textContent=text;el.className=`message show ${type}`;clearTimeout(el._timer);el._timer=setTimeout(()=>el.className='message',6000)}
+      function setBusy(value){busy=value;document.querySelectorAll('button').forEach(button=>button.disabled=value)}
 
       function render(){
-        const total=attendees.length;
-        const attended=attendees.filter(a=>a.attended).length;
-        $('total').textContent=total;
-        $('attended').textContent=attended;
-        $('notAttended').textContent=total-attended;
-        $('remaining').textContent=total-attended;
-
+        const total=attendees.length,attended=attendees.filter(a=>a.attended).length;
+        $('total').textContent=total;$('attended').textContent=attended;$('notAttended').textContent=total-attended;$('remaining').textContent=total-attended;
         const term=searchTerm.trim().toLowerCase();
-        const list=attendees.filter(a=>!term||a.name.toLowerCase().includes(term)).sort((a,b)=>a.name.localeCompare(b.name));
-        if(!list.length){
-          $('tableBody').innerHTML=`<tr><td colspan="4" class="empty">${total?'No matches found.':'No attendees yet. Add one or import a CSV.'}</td></tr>`;
-          return;
-        }
-        $('tableBody').innerHTML=list.map(a=>`<tr>
-          <td><strong>${escapeHtml(a.name)}</strong></td>
-          <td>${escapeHtml(displayDate(a.createdAt))}</td>
-          <td><span class="status-badge ${a.attended?'attended':'not-attended'}">${a.attended?'✅ Attended':'⏳ Not Attended'}</span></td>
-          <td><button class="btn btn-sm ${a.attended?'btn-secondary':'btn-success'}" data-id="${a.id}">${a.attended?'↩️ Undo':'✅ Mark Attended'}</button></td>
-        </tr>`).join('');
+        const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+        $('tableBody').innerHTML=list.length?list.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${escapeHtml(displayDate(a.attended_at))}</td><td><span class="status-badge ${a.attended?'attended':'not-attended'}">${a.attended?'✅ Attended':'⏳ Not Attended'}</span></td><td><button class="btn btn-sm ${a.attended?'btn-secondary':'btn-success'}" data-id="${a.id}">${a.attended?'↩️ Undo':'✅ Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees found.</td></tr>';
       }
 
-      function addAttendee(){
-        const name=$('nameInput').value.trim();
-        if(!name)return $('nameInput').focus();
-        if(attendees.some(a=>a.name.toLowerCase()===name.toLowerCase())){alert(`"${name}" already exists.`);return}
-        attendees.push({id:makeId(),name,attended:false,createdAt:stamp(),attendedAt:null});
-        save();render();$('nameInput').value='';$('nameInput').focus();
+      async function loadAttendees(){
+        if(busy)return;setBusy(true);
+        $('tableBody').innerHTML='<tr><td colspan="4" class="empty">Loading attendees…</td></tr>';
+        const {data,error}=await db.from('event_attendees').select('id,name,attended,attended_at').order('name',{ascending:true});
+        setBusy(false);
+        if(error){$('tableBody').innerHTML='<tr><td colspan="4" class="empty">Could not load attendees.</td></tr>';showMessage(error.message,'error');return}
+        attendees=data||[];render();
+      }
+
+      async function addAttendee(){
+        const name=$('nameInput').value.trim();if(!name)return $('nameInput').focus();
+        if(attendees.some(a=>String(a.name).toLowerCase()===name.toLowerCase()))return showMessage(`"${name}" already exists.`,'error');
+        setBusy(true);const {data,error}=await db.from('event_attendees').insert({name,attended:false,attended_at:null}).select('id,name,attended,attended_at').single();setBusy(false);
+        if(error)return showMessage(error.message,'error');
+        attendees.push(data);$('nameInput').value='';render();$('nameInput').focus();showMessage('Attendee added.');
+      }
+
+      async function toggleAttendance(id){
+        const attendee=attendees.find(a=>String(a.id)===String(id));if(!attendee)return;
+        const next=!attendee.attended,stamp=next?new Date().toISOString():null;
+        setBusy(true);const {data,error}=await db.from('event_attendees').update({attended:next,attended_at:stamp}).eq('id',attendee.id).select('id,name,attended,attended_at').single();setBusy(false);
+        if(error)return showMessage(error.message,'error');
+        Object.assign(attendee,data);render();showMessage(next?'Attendance marked.':'Attendance removed.');
       }
 
       function csvCell(value){return `"${String(value??'').replace(/"/g,'""')}"`}
       function exportCsv(){
-        if(!attendees.length)return alert('No attendees to export.');
-        const rows=[['Name','Status','Added At','Attended At'],...attendees.map(a=>[a.name,a.attended?'Attended':'Not Attended',displayDate(a.createdAt),displayDate(a.attendedAt)])];
-        const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\n');
-        const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-        const link=document.createElement('a');link.href=url;link.download=`community-checkin-${new Date().toISOString().slice(0,10)}.csv`;link.click();URL.revokeObjectURL(url);
+        if(!attendees.length)return showMessage('No attendees to export.','error');
+        const term=searchTerm.trim().toLowerCase();const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term));
+        const rows=[['Name','Status','Attended At'],...list.map(a=>[a.name,a.attended?'Attended':'Not Attended',displayDate(a.attended_at)])];
+        const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download=`community-checkin-${new Date().toISOString().slice(0,10)}.csv`;link.click();URL.revokeObjectURL(url);
       }
 
-      function parseCsvLine(line){
-        const out=[];let value='',quoted=false;
-        for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i++}else quoted=!quoted}else if(c===','&&!quoted){out.push(value.trim());value=''}else value+=c}
-        out.push(value.trim());return out;
-      }
-
+      function parseCsvLine(line){const out=[];let value='',quoted=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i++}else quoted=!quoted}else if(c===','&&!quoted){out.push(value.trim());value=''}else value+=c}out.push(value.trim());return out}
       async function importCsv(file){
-        const text=await file.text();
-        const lines=text.split(/\r?\n/).filter(line=>line.trim());
-        if(!lines.length)return alert('CSV is empty.');
-        const first=parseCsvLine(lines[0]);
-        const header=first.findIndex(v=>v.trim().toLowerCase()==='name');
-        const start=header>=0?1:0;
-        const nameIndex=header>=0?header:0;
-        const existing=new Set(attendees.map(a=>a.name.toLowerCase()));
-        let added=0;
-        for(let i=start;i<lines.length;i++){
-          const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();
-          if(!name||existing.has(name.toLowerCase()))continue;
-          attendees.push({id:makeId(),name,attended:false,createdAt:stamp(),attendedAt:null});
-          existing.add(name.toLowerCase());added++;
-        }
-        save();render();alert(`${added} attendee${added===1?'':'s'} imported.`);
+        const text=await file.text(),lines=text.split(/\r?\n/).filter(line=>line.trim());if(!lines.length)return showMessage('CSV is empty.','error');
+        const first=parseCsvLine(lines[0]),header=first.findIndex(v=>v.toLowerCase()==='name'),start=header>=0?1:0,nameIndex=header>=0?header:0,existing=new Set(attendees.map(a=>String(a.name).toLowerCase())),rows=[];
+        for(let i=start;i<lines.length;i++){const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();if(name&&!existing.has(name.toLowerCase())){rows.push({name,attended:false,attended_at:null});existing.add(name.toLowerCase())}}
+        if(!rows.length)return showMessage('No new attendees found.','error');
+        setBusy(true);const {error}=await db.from('event_attendees').insert(rows);setBusy(false);if(error)return showMessage(error.message,'error');showMessage(`${rows.length} attendees imported.`);await loadAttendees();
       }
 
-      $('addBtn').addEventListener('click',addAttendee);
-      $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAttendee()});
-      $('searchInput').addEventListener('input',e=>{searchTerm=e.target.value;render()});
-      $('tableBody').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(!button)return;const attendee=attendees.find(a=>a.id===button.dataset.id);if(!attendee)return;attendee.attended=!attendee.attended;attendee.attendedAt=attendee.attended?stamp():null;save();render()});
-      $('clearAllBtn').addEventListener('click',()=>{if(!attendees.length)return;if(confirm('Delete all attendees and attendance records?')){attendees=[];save();render()}});
-      $('importBtn').addEventListener('click',()=>$('fileInput').click());
-      $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(file)await importCsv(file);e.target.value=''});
-      $('exportBtn').addEventListener('click',exportCsv);
-      $('printBtn').addEventListener('click',()=>window.print());
-      $('footerPrintBtn').addEventListener('click',()=>window.print());
-      render();
+      $('addBtn').addEventListener('click',addAttendee);$('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAttendee()});
+      $('searchInput').addEventListener('input',e=>{searchTerm=e.target.value;render()});$('tableBody').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(button)toggleAttendance(button.dataset.id)});
+      $('refreshBtn').addEventListener('click',loadAttendees);$('importBtn').addEventListener('click',()=>$('fileInput').click());$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(file)await importCsv(file);e.target.value=''});
+      $('exportBtn').addEventListener('click',exportCsv);$('printBtn').addEventListener('click',()=>window.print());$('footerPrintBtn').addEventListener('click',()=>window.print());
+
+      if(!cfg?.supabaseUrl||!cfg?.supabaseKey||!window.supabase){showMessage('Supabase configuration is missing.','error');return}
+      db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);loadAttendees();
     })();
   </script>
 </body>
