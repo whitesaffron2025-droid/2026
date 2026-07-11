@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Live Check-in · 2026 Campaign Manager</title>
+  <link rel="stylesheet" href="css/admin.css?v=20">
+  <link rel="stylesheet" href="css/live-checkin.css?v=1">
+</head>
+<body>
+  <header class="live-header">
+    <div><strong>2026 Campaign Manager</strong><small>Live voter check-in</small></div>
+    <nav><a href="index.html">Residents</a><a class="active" href="live.html">Live</a></nav>
+  </header>
+  <main class="live-shell">
+    <section class="live-toolbar">
+      <div>
+        <h1>Live Check-in</h1>
+        <p>Click a resident row to change Voted / Not Voted, then press Save Changes.</p>
+      </div>
+      <div class="live-actions">
+        <select id="partyFilter"><option value="ALL">All parties</option><option value="PNC">PNC</option><option value="MDP">MDP</option></select>
+        <input id="searchInput" placeholder="Search ID, ID number, name, address or phone">
+        <button id="saveChanges" class="btn primary" type="button">Save Changes</button>
+        <span id="pendingCount">0 pending</span>
+      </div>
+    </section>
+    <section class="live-stats">
+      <div><strong id="totalCount">0</strong><span>Total</span></div>
+      <div><strong id="votedCount">0</strong><span>Voted</span></div>
+      <div><strong id="notVotedCount">0</strong><span>Not Voted</span></div>
+    </section>
+    <section class="live-table-wrap">
+      <table class="live-table">
+        <thead><tr><th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Status</th></tr></thead>
+        <tbody id="residentRows"><tr><td colspan="10">Loading residents…</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="../js/config.js?v=20"></script>
+  <script src="js/live-checkin.js?v=1"></script>
+</body>
+</html>
