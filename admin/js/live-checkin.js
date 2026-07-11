@@ -26,6 +26,13 @@
     return assignmentsByResident.get(String(row.id)) || [];
   }
 
+  function normalizedCampaignVoteStatus(row) {
+    const value = text(row.vote_status).toLowerCase();
+    if (value === 'will-vote') return 'will-vote';
+    if (value === 'not-vote') return 'not-vote';
+    return 'not-decided';
+  }
+
   async function loadPaged(queryFactory) {
     const all = [];
     for (let from = 0; ; from += pageSize) {
@@ -40,7 +47,7 @@
   async function loadResidents() {
     rows = await loadPaged((from, to) => db
       .from(table)
-      .select('id,photo_url,name,national_id,house,lives_in,living_place,phone,sex,age,party,has_voted,voted_at')
+      .select('id,photo_url,name,national_id,house,lives_in,living_place,phone,sex,age,party,vote_status,has_voted,voted_at')
       .eq('party', 'PNC')
       .order('house', { ascending: true })
       .order('name', { ascending: true })
@@ -66,7 +73,7 @@
       });
       assignmentFiltersAvailable = true;
     } catch (error) {
-      console.warn('Assignment filters unavailable:', error);
+      console.warn('Assignment filter unavailable:', error);
       assignments = [];
       assignmentsByResident.clear();
       assignmentFiltersAvailable = false;
@@ -75,9 +82,7 @@
 
   function showAssignmentAvailability() {
     const assignmentFilter = document.getElementById('assignmentFilter');
-    const assignerFilter = document.getElementById('assignerFilter');
     assignmentFilter.disabled = !assignmentFiltersAvailable;
-    assignerFilter.disabled = !assignmentFiltersAvailable;
 
     let notice = document.getElementById('assignmentNotice');
     if (!notice) {
@@ -92,25 +97,18 @@
       notice.textContent = '';
     } else {
       assignmentFilter.value = 'ALL';
-      assignerFilter.value = 'ALL';
       notice.hidden = false;
-      notice.textContent = 'Assignment filters are temporarily unavailable. Residents, vote status, search, address, save, and export are still working.';
+      notice.textContent = 'Assignment status is temporarily unavailable. All other filters, save, and export are still working.';
     }
   }
 
   function populateFilterOptions() {
     const addresses = [...new Set(rows.map(row => text(row.house)).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    const assigners = [...new Set(assignments.map(item => text(item.assignee_name)).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
     document.getElementById('addressFilter').innerHTML =
       '<option value="ALL">All Addresses</option>' +
       addresses.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
-
-    document.getElementById('assignerFilter').innerHTML =
-      '<option value="ALL">All Assigners</option>' +
-      assigners.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
 
     showAssignmentAvailability();
   }
@@ -120,9 +118,7 @@
     const assignmentStatus = assignmentFiltersAvailable
       ? document.getElementById('assignmentFilter').value
       : 'ALL';
-    const assigner = assignmentFiltersAvailable
-      ? document.getElementById('assignerFilter').value
-      : 'ALL';
+    const campaignVote = document.getElementById('campaignVoteFilter').value;
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
     return rows.filter(row => {
@@ -131,22 +127,22 @@
       const addressMatches = address === 'ALL' || text(row.house) === address;
       const assignmentMatches = assignmentStatus === 'ALL' ||
         (assignmentStatus === 'ASSIGNED' ? assigned : !assigned);
-      const assignerMatches = assigner === 'ALL' ||
-        names.some(name => name.toLowerCase() === assigner.toLowerCase());
+      const campaignVoteMatches = campaignVote === 'ALL' ||
+        normalizedCampaignVoteStatus(row) === campaignVote;
       const queryMatches = !query || [
         row.id, row.national_id, row.name, row.house,
         row.lives_in, row.living_place, row.phone, row.sex, row.age,
         names.join(' ')
       ].map(value => String(value ?? '').toLowerCase()).join(' ').includes(query);
-      return addressMatches && assignmentMatches && assignerMatches && queryMatches;
+      return addressMatches && assignmentMatches && campaignVoteMatches && queryMatches;
     });
   }
 
   function filteredRows() {
-    const status = document.getElementById('statusFilter').value;
+    const turnoutStatus = document.getElementById('statusFilter').value;
     return baseFilteredRows().filter(row => {
       const voted = currentVotedValue(row);
-      return status === 'ALL' || (status === 'VOTED' ? voted : !voted);
+      return turnoutStatus === 'ALL' || (turnoutStatus === 'VOTED' ? voted : !voted);
     });
   }
 
@@ -287,7 +283,7 @@
       alert('There are no filtered residents to export.');
       return;
     }
-    const headers = ['ID','ID Number','Name','Official Address','Living Now','Mobile','Sex','Age','Assignment Status','Assignees','Vote Status','Voted At'];
+    const headers = ['ID','ID Number','Name','Official Address','Living Now','Mobile','Sex','Age','Assignment Status','Assignees','Campaign Vote Status','Turnout Status','Voted At'];
     const lines = [headers.map(csvCell).join(',')];
     list.forEach(row => {
       const voted = currentVotedValue(row);
@@ -297,7 +293,8 @@
         row.lives_in || row.living_place || 'Not recorded', row.phone,
         row.sex, row.age,
         assignmentFiltersAvailable ? (names.length ? 'Assigned' : 'Unassigned') : 'Unavailable',
-        names.join(', '), voted ? 'Voted' : 'Not Yet',
+        names.join(', '), normalizedCampaignVoteStatus(row),
+        voted ? 'Voted' : 'Not Yet',
         voted ? (pending.has(String(row.id)) ? 'Pending save' : formatSavedTime(row.voted_at)) : ''
       ].map(csvCell).join(','));
     });
@@ -317,7 +314,7 @@
   function clearFilters() {
     document.getElementById('addressFilter').value = 'ALL';
     document.getElementById('assignmentFilter').value = 'ALL';
-    document.getElementById('assignerFilter').value = 'ALL';
+    document.getElementById('campaignVoteFilter').value = 'ALL';
     document.getElementById('statusFilter').value = 'ALL';
     document.getElementById('searchInput').value = '';
     render();
@@ -341,7 +338,7 @@
     if (event.target.closest('#clearFilters')) clearFilters();
   });
 
-  ['addressFilter', 'assignmentFilter', 'assignerFilter', 'statusFilter']
+  ['addressFilter', 'assignmentFilter', 'campaignVoteFilter', 'statusFilter']
     .forEach(id => document.getElementById(id).addEventListener('change', render));
   document.getElementById('searchInput').addEventListener('input', render);
 
