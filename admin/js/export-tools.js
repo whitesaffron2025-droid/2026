@@ -1,4 +1,4 @@
-/* MODULE: Filtered Records Export | VERSION: 3.0.0 */
+/* MODULE: Filtered Records Export | VERSION: 3.0.1 */
 (() => {
   'use strict';
 
@@ -167,10 +167,14 @@
   }
 
   function installButton() {
-    document.getElementById('sectionExportTools')?.remove();
-
     const filterBar = document.querySelector('.filter-bar');
     if (!filterBar) return;
+
+    const existing = document.getElementById('sectionExportTools');
+    if (existing) {
+      if (existing.parentElement !== filterBar) filterBar.appendChild(existing);
+      return;
+    }
 
     const tools = document.createElement('div');
     tools.id = 'sectionExportTools';
@@ -192,7 +196,8 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
-    new MutationObserver(scheduleButton).observe(document.body, {
+    const pageContent = document.getElementById('pageContent') || document.body;
+    new MutationObserver(scheduleButton).observe(pageContent, {
       childList: true,
       subtree: true
     });
