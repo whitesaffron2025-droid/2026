@@ -1,4 +1,4 @@
-/* MODULE: Resident Party Editor | VERSION: 1.0.0 */
+/* MODULE: Resident Party Editor | VERSION: 1.1.0 */
 (() => {
   'use strict';
 
@@ -26,8 +26,7 @@
     const form = document.querySelector('#editorForm[data-section="residents"]');
     if (!form || form.querySelector('[name="party"]')) return;
 
-    const id = form.dataset.id;
-    const resident = window.CampaignApp?.state?.rows?.find(row => String(row.id) === String(id));
+    const resident = window.CampaignApp?.state?.rows?.find(row => String(row.id) === String(form.dataset.id));
     if (!resident) return;
 
     const current = normalizeParty(resident.party) || '';
@@ -41,6 +40,28 @@
 
     const grid = form.querySelector('.editor-grid');
     grid?.insertBefore(label, grid.firstElementChild?.nextSibling || grid.firstElementChild);
+  }
+
+  function restorePartyAfterReload() {
+    const savedParty = sessionStorage.getItem('campaign_restore_party');
+    if (!savedParty) return;
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      const app = window.CampaignApp;
+      const select = document.getElementById('globalParty');
+      if (app?.state && select) {
+        clearInterval(timer);
+        sessionStorage.removeItem('campaign_restore_party');
+        app.state.party = savedParty;
+        select.value = savedParty;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (attempts >= 120) {
+        clearInterval(timer);
+        sessionStorage.removeItem('campaign_restore_party');
+      }
+    }, 100);
   }
 
   async function saveResident(event) {
@@ -89,17 +110,10 @@
     if (index >= 0) app.state.rows[index] = data;
 
     const partyChanged = previousParty !== nextParty;
-    if (partyChanged) {
-      const { error: shareError } = await database.rpc('invalidate_live_turnout_shares');
-      if (shareError) console.warn('Old public share links could not be invalidated:', shareError);
-    }
-
+    sessionStorage.setItem('campaign_restore_party', app.state.party || 'all');
     document.getElementById('sectionEditor')?.remove();
 
-    if (partyChanged) {
-      alert('Party updated. Existing public turnout links were expired. Create a new Share Preview link.');
-    }
-
+    if (partyChanged) alert('Party updated. Public turnout sharing is blocked.');
     location.reload();
   }
 
@@ -108,5 +122,6 @@
     const observer = new MutationObserver(installPartyField);
     observer.observe(document.body, { childList: true, subtree: true });
     installPartyField();
+    restorePartyAfterReload();
   });
 })();
