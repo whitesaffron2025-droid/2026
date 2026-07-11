@@ -1,4 +1,4 @@
-/* MODULE: Clickable Section Stat Filters | VERSION: 1.0.0 */
+/* MODULE: Clickable Section Stat Filters | VERSION: 1.1.0 */
 (() => {
   'use strict';
 
@@ -25,7 +25,7 @@
       total: { type: 'filter', name: 'voteStatus', value: 'all' },
       'will vote': { type: 'filter', name: 'voteStatus', value: 'will-vote' },
       'not vote': { type: 'filter', name: 'voteStatus', value: 'not-vote' },
-      'not decided': { type: 'filter', name: 'voteStatus', value: 'not-decided' }
+      'not decided': { type: 'filter', name: 'voteStatus', value: 'pending', fallback: 'not-decided' }
     },
     visits: {
       total: { type: 'filter', name: 'visitStatus', value: 'all' },
@@ -45,6 +45,25 @@
     return window.CampaignApp?.state?.section || location.hash.replace('#', '') || 'residents';
   }
 
+  function hasPendingVotes() {
+    return !!window.CampaignApp?.state?.rows?.some(row => text(row.vote_status) === 'pending');
+  }
+
+  function resolvedValue(action) {
+    if (action?.name === 'voteStatus' && action.value === 'pending' && !hasPendingVotes()) {
+      return action.fallback || 'not-decided';
+    }
+    return action?.value;
+  }
+
+  function ensureOption(select, value, label) {
+    if (!select || [...select.options].some(option => option.value === value)) return;
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  }
+
   function applyAction(action) {
     if (!action) return;
 
@@ -58,8 +77,19 @@
 
     const select = document.querySelector(`[data-filter="${action.name}"]`);
     if (!select) return;
-    select.value = action.value;
+    const value = resolvedValue(action);
+    if (value === 'pending') ensureOption(select, 'pending', 'Not Decided');
+    select.value = value;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function isActive(action) {
+    if (!action) return false;
+    if (action.type === 'party') {
+      return document.getElementById('globalParty')?.value === action.value;
+    }
+    const select = document.querySelector(`[data-filter="${action.name}"]`);
+    return select?.value === resolvedValue(action);
   }
 
   function decorateCards() {
@@ -68,11 +98,16 @@
     document.querySelectorAll('.stats-grid .stat-card').forEach(card => {
       const label = text(card.querySelector('span')?.textContent);
       const action = map[label];
+      const active = isActive(action);
       card.dataset.statFilter = action ? label : '';
       card.style.cursor = action ? 'pointer' : 'default';
       card.style.userSelect = action ? 'none' : '';
+      card.style.outline = active ? '3px solid #2563eb' : '';
+      card.style.outlineOffset = active ? '2px' : '';
+      card.style.transform = active ? 'translateY(-2px)' : '';
       card.title = action ? `Filter by ${card.querySelector('span')?.textContent || label}` : '';
       card.setAttribute('role', action ? 'button' : 'group');
+      card.setAttribute('aria-pressed', action ? String(active) : 'false');
       card.tabIndex = action ? 0 : -1;
     });
   }
@@ -90,6 +125,7 @@
     const section = sectionName();
     const label = text(card.querySelector('span')?.textContent);
     applyAction(mappings[section]?.[label]);
+    setTimeout(scheduleDecorate, 0);
   }
 
   document.addEventListener('click', event => {
@@ -106,6 +142,7 @@
     activate(card);
   });
 
+  document.addEventListener('change', scheduleDecorate, true);
   document.addEventListener('DOMContentLoaded', () => {
     new MutationObserver(scheduleDecorate).observe(document.body, { childList: true, subtree: true });
     scheduleDecorate();
