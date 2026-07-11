@@ -59,7 +59,7 @@
     </div>
 
     <div class="footer-actions"><button class="btn btn-secondary btn-sm" id="footerPrintBtn" type="button">🖨️ Print</button></div>
-    <p class="note">Source: Supabase table <strong>event_attendees</strong>. Every attendance change is saved immediately.</p>
+    <p class="note">Source: Supabase table <strong>2026</strong>. Every attendance change is saved immediately.</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -81,13 +81,13 @@
         $('total').textContent=total;$('attended').textContent=attended;$('notAttended').textContent=total-attended;$('remaining').textContent=total-attended;
         const term=searchTerm.trim().toLowerCase();
         const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-        $('tableBody').innerHTML=list.length?list.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${escapeHtml(displayDate(a.attended_at))}</td><td><span class="status-badge ${a.attended?'attended':'not-attended'}">${a.attended?'✅ Attended':'⏳ Not Attended'}</span></td><td><button class="btn btn-sm ${a.attended?'btn-secondary':'btn-success'}" data-id="${a.id}">${a.attended?'↩️ Undo':'✅ Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees found.</td></tr>';
+        $('tableBody').innerHTML=list.length?list.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${escapeHtml(displayDate(a.voted_at))}</td><td><span class="status-badge ${a.attended?'attended':'not-attended'}">${a.attended?'✅ Attended':'⏳ Not Attended'}</span></td><td><button class="btn btn-sm ${a.attended?'btn-secondary':'btn-success'}" data-id="${a.id}">${a.attended?'↩️ Undo':'✅ Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees found.</td></tr>';
       }
 
       async function loadAttendees(){
         if(busy)return;setBusy(true);
         $('tableBody').innerHTML='<tr><td colspan="4" class="empty">Loading attendees…</td></tr>';
-        const {data,error}=await db.from('event_attendees').select('id,name,attended,attended_at').order('name',{ascending:true});
+        const {data,error}=await db.from('2026').select('id,name,attended,voted_at').order('name',{ascending:true});
         setBusy(false);
         if(error){$('tableBody').innerHTML='<tr><td colspan="4" class="empty">Could not load attendees.</td></tr>';showMessage(error.message,'error');return}
         attendees=data||[];render();
@@ -96,7 +96,7 @@
       async function addAttendee(){
         const name=$('nameInput').value.trim();if(!name)return $('nameInput').focus();
         if(attendees.some(a=>String(a.name).toLowerCase()===name.toLowerCase()))return showMessage(`"${name}" already exists.`,'error');
-        setBusy(true);const {data,error}=await db.from('event_attendees').insert({name,attended:false,attended_at:null}).select('id,name,attended,attended_at').single();setBusy(false);
+        setBusy(true);const {data,error}=await db.from('2026').insert({name,attended:false,voted_at:null}).select('id,name,attended,voted_at').single();setBusy(false);
         if(error)return showMessage(error.message,'error');
         attendees.push(data);$('nameInput').value='';render();$('nameInput').focus();showMessage('Attendee added.');
       }
@@ -104,7 +104,7 @@
       async function toggleAttendance(id){
         const attendee=attendees.find(a=>String(a.id)===String(id));if(!attendee)return;
         const next=!attendee.attended,stamp=next?new Date().toISOString():null;
-        setBusy(true);const {data,error}=await db.from('event_attendees').update({attended:next,attended_at:stamp}).eq('id',attendee.id).select('id,name,attended,attended_at').single();setBusy(false);
+        setBusy(true);const {data,error}=await db.from('2026').update({attended:next,voted_at:stamp}).eq('id',attendee.id).select('id,name,attended,voted_at').single();setBusy(false);
         if(error)return showMessage(error.message,'error');
         Object.assign(attendee,data);render();showMessage(next?'Attendance marked.':'Attendance removed.');
       }
@@ -113,7 +113,7 @@
       function exportCsv(){
         if(!attendees.length)return showMessage('No attendees to export.','error');
         const term=searchTerm.trim().toLowerCase();const list=attendees.filter(a=>!term||String(a.name||'').toLowerCase().includes(term));
-        const rows=[['Name','Status','Attended At'],...list.map(a=>[a.name,a.attended?'Attended':'Not Attended',displayDate(a.attended_at)])];
+        const rows=[['Name','Status','Attended At'],...list.map(a=>[a.name,a.attended?'Attended':'Not Attended',displayDate(a.voted_at)])];
         const csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download=`community-checkin-${new Date().toISOString().slice(0,10)}.csv`;link.click();URL.revokeObjectURL(url);
       }
 
@@ -121,9 +121,9 @@
       async function importCsv(file){
         const text=await file.text(),lines=text.split(/\r?\n/).filter(line=>line.trim());if(!lines.length)return showMessage('CSV is empty.','error');
         const first=parseCsvLine(lines[0]),header=first.findIndex(v=>v.toLowerCase()==='name'),start=header>=0?1:0,nameIndex=header>=0?header:0,existing=new Set(attendees.map(a=>String(a.name).toLowerCase())),rows=[];
-        for(let i=start;i<lines.length;i++){const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();if(name&&!existing.has(name.toLowerCase())){rows.push({name,attended:false,attended_at:null});existing.add(name.toLowerCase())}}
+        for(let i=start;i<lines.length;i++){const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();if(name&&!existing.has(name.toLowerCase())){rows.push({name,attended:false,voted_at:null});existing.add(name.toLowerCase())}}
         if(!rows.length)return showMessage('No new attendees found.','error');
-        setBusy(true);const {error}=await db.from('event_attendees').insert(rows);setBusy(false);if(error)return showMessage(error.message,'error');showMessage(`${rows.length} attendees imported.`);await loadAttendees();
+        setBusy(true);const {error}=await db.from('2026').insert(rows);setBusy(false);if(error)return showMessage(error.message,'error');showMessage(`${rows.length} attendees imported.`);await loadAttendees();
       }
 
       $('addBtn').addEventListener('click',addAttendee);$('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAttendee()});
