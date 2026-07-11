@@ -1,12 +1,12 @@
-# 2026 Campaign Manager — File Structure Backup
+# 2026 Campaign Manager — Full Website Backup Manifest
 
-Generated: 10 July 2026
+Generated: 11 July 2026
 
-Stable build: `2026.07.10-clean-stable`
+Build: `2026.07.11-live-turnout`
 
 Repository: `whitesaffron2025-droid/2026`
 
-## Active structure
+## Active website structure
 
 ```text
 2026/
@@ -14,6 +14,7 @@ Repository: `whitesaffron2025-droid/2026`
 ├── public.html
 ├── shared.html
 ├── README.md
+├── SHAS.md
 ├── js/
 │   └── config.js
 ├── assets/
@@ -25,45 +26,53 @@ Repository: `whitesaffron2025-droid/2026`
 │       └── self-assign.js
 ├── admin/
 │   ├── index.html
+│   ├── live.html
 │   ├── css/
 │   │   ├── admin.css
 │   │   ├── auth.css
 │   │   ├── compact-gallery.css
 │   │   ├── dashboard-modern.css
+│   │   ├── live-checkin.css
 │   │   ├── modern-editors.css
 │   │   └── workflow-clean.css
 │   └── js/
 │       ├── app.js
-│       └── dashboard-modern.js
+│       ├── dashboard-modern.js
+│       ├── export-tools.js
+│       ├── filter-export-layout.js
+│       ├── live-checkin.js
+│       ├── live-nav.js
+│       ├── mobile-print-fix.js
+│       ├── photo-click-fix.js
+│       ├── resident-table-columns.js
+│       ├── stat-card-filters.js
+│       └── workflow-hotfix.js
 └── docs/
     └── FILE-STRUCTURE-BACKUP.md
 ```
 
-## Active runtime files and blob SHAs
+## Active database configuration
 
-These are GitHub blob SHAs, not commit SHAs.
+Main table:
 
-| File | Version / Role | Blob SHA |
-|---|---|---|
-| `admin/index.html` | Stable admin loader | `c97236069f94c132aeb9c7c803a5ceaa4d762e96` |
-| `admin/js/app.js` | Campaign Admin Core v20.0.0 | `0b5ecd93d4140c1fa8a061669cf6f2a66df05b03` |
-| `admin/js/dashboard-modern.js` | Modern Dashboard v2.0.0 | `3850ba66127eab5907a20d5e0bb35451457012ef` |
-| `admin/css/workflow-clean.css` | Clean Workflow Editors v1.0.0 | `ab11f940e63af585d460f0ea68480361ba4c86df` |
-| `admin/css/dashboard-modern.css` | Dashboard visual system | `8f244a17e83d31cfdd8acadf5d8be67986f19f8f` |
-| `shared.html` | Shared self-assignment page | `49dc64162a316b3b9f347349918682005364da14` |
-| `assets/js/self-assign.js` | Shared Self Assignment v2.0.0 | `9ea773b0c9f4ffb8ca06859f35982a4517969888` |
-| `js/config.js` | Supabase/runtime configuration | `deb5a7b7c8e809225980c851cf66f44d797520c2` |
-| `README.md` | Architecture documentation after update | `04385f4613d117e5b3050e49569c078871a2d328` |
+```text
+public.campaign
+```
 
-## Commit backup points
+Assignment table:
 
-| Change | Commit SHA |
-|---|---|
-| Clean stable workflow files uploaded | Current repository state before documentation update |
-| README architecture update | `42fc3bbb1aafbdd2e9a2a1e31ca30476689702e2` |
-| File structure and SHA manifest | Created by the commit containing this file |
+```text
+public.resident_assignments
+```
 
-## Active loader order
+Live turnout fields:
+
+```text
+has_voted boolean
+voted_at timestamptz
+```
+
+## Admin workspace loader order
 
 `admin/index.html` loads:
 
@@ -71,89 +80,105 @@ These are GitHub blob SHAs, not commit SHAs.
 1. Supabase JavaScript SDK
 2. js/config.js
 3. admin/js/app.js
-4. admin/js/dashboard-modern.js
+4. admin/js/resident-table-columns.js
+5. admin/js/live-nav.js
+6. admin/js/workflow-hotfix.js
+7. admin/js/dashboard-modern.js
+8. admin/js/photo-click-fix.js
+9. admin/js/export-tools.js
+10. admin/js/stat-card-filters.js
+11. admin/js/mobile-print-fix.js
+12. admin/js/filter-export-layout.js
 ```
 
-No other admin JavaScript patch modules should be added to the loader without an audit.
+## PNC Live Turnout runtime
 
-## Historical files not loaded
-
-These files may still exist in the repository, but the stable admin loader does not execute them:
+Page:
 
 ```text
-admin/js/section-logic.js
-admin/js/editor-hotfix.js
-admin/js/phone-verification.js
-admin/js/compact-phone-suggestion.js
-admin/js/party-filter-counts.js
-admin/js/dashboard-navigation.js
-admin/js/assignment-share.js
-admin/js/module-registry.js
+admin/live.html
 ```
 
-Do not restore these scripts to `admin/index.html` unless their logic is first merged into the active core and tested for duplicate listeners and MutationObserver loops.
-
-## Database ownership
-
-### Master table
+Runtime order:
 
 ```text
-public."2026"
+1. admin/css/admin.css
+2. admin/css/live-checkin.css
+3. Supabase JavaScript SDK
+4. js/config.js
+5. admin/js/live-checkin.js
 ```
 
-Stores resident identity, contact, status, call, vote, visit, transport, and latest assignment summary fields.
+### Live page rules
 
-### Assignment history
+- Loads only rows with `party = PNC`.
+- Displays Voted, Not Yet, and PNC Total cards.
+- Dashboard cards filter the resident table.
+- Search covers ID, National ID, name, address, living place, mobile, sex, and age.
+- Vote changes remain local until `Save Changes` is pressed.
+- Saves only `has_voted` and `voted_at`.
+- Update query also checks `party = PNC`.
+- Warns before leaving with unsaved changes.
+- Exports the current filtered list to CSV.
+
+### Live table order
 
 ```text
-public.resident_assignments
+ID | Photo | ID Number | Name | Official Address | Living Now | Mobile | Sex | Age | Vote Status
 ```
 
-Stores one row for every resident/assignee assignment event:
+### CSV order
 
 ```text
-resident_id
-assignee_name
-assigned_at
+ID | ID Number | Name | Official Address | Living Now | Mobile | Sex | Age | Vote Status | Voted At
 ```
 
-This table allows multiple assignees for one resident.
+## Current active file blob SHAs
 
-## Permanent field rules
+These are GitHub blob SHAs, not commit SHAs.
 
-```text
-Residents:
-  Phone               = editable
-  Current Living Place = editable
+| File | Role | Blob SHA |
+|---|---|---|
+| `README.md` | Current architecture and page documentation | `c1aa6d6b0e54423c10cba5b5a113d6230a311877` |
+| `admin/index.html` | Admin application loader | `def97b9afd5e65faa6b312f2f8b8e01745ffd845` |
+| `admin/live.html` | PNC Live Turnout page | `4880320b2dcba04916f6f68a71dc2d15da0b15e1` |
+| `admin/js/app.js` | Main admin application | `0b5ecd93d4140c1fa8a061669cf6f2a66df05b03` |
+| `admin/js/live-checkin.js` | PNC turnout logic and CSV export | `6db150d670806147f963449b2cb5d211c23d2236` |
+| `admin/css/live-checkin.css` | Live page layout and responsive table | `0ac371f88c82b9dc83854ddd82d85c8805d8d67d` |
+| `admin/js/dashboard-modern.js` | Admin dashboard | `3850ba66127eab5907a20d5e0bb35451457012ef` |
+| `admin/css/workflow-clean.css` | Workflow styling | `ab11f940e63af585d460f0ea68480361ba4c86df` |
+| `js/config.js` | Supabase/runtime configuration | `dda83a801ff3cfa1f6a2b1f22ad2ef7615e31ca8` |
 
-Visits:
-  Phone               = read-only
-  Current Living Place = editable
+## Latest backup commits
 
-Assign / Calls / Votes / Transport:
-  Phone               = read-only
-  Current Living Place = read-only
-
-All sections:
-  Name, National ID, Official Address, Sex, Age = locked
-```
+| Change | Commit SHA |
+|---|---|
+| Add filtered CSV export to PNC live page | `9226f31cd3032c35a65e4c28ac500ffdba31c028` |
+| Export active PNC turnout filter | `ac80215a7c437aa3c375a6eb6825bdc709a15724` |
+| Document current architecture and PNC Live page | `a14ea672b5c8afd14903a5bd9042efd3bc746829` |
+| Update this full website backup manifest | Commit containing this file |
 
 ## Restore procedure
 
-To restore this stable build:
+1. Restore the repository at the desired commit.
+2. Confirm `js/config.js` points to the correct Supabase project and `campaign` table.
+3. Confirm `admin/index.html` loads the modules listed in this document.
+4. Confirm `admin/live.html` loads `live-checkin.css?v=6` and `live-checkin.js?v=6`.
+5. Hard-refresh the site.
+6. Test admin authentication.
+7. Test Residents loading, searching, filtering, editing, and CSV export.
+8. Test Assign, Calls, Votes, Visits, and Transport.
+9. Test `/admin/live.html` with PNC Total, Voted, Not Yet, search, save, undo-before-save, and filtered CSV export.
+10. Confirm Supabase updates `has_voted` and `voted_at` only for the selected PNC resident IDs.
+11. Confirm there are no repeating MutationObserver loops or duplicate event listeners.
 
-1. Restore the files listed in the SHA table.
-2. Confirm `admin/index.html` loads only `app.js` and `dashboard-modern.js` after configuration.
-3. Hard-refresh the Admin page.
-4. Test Residents edit, Calls edit, Votes edit, Visits edit, Transport edit, house navigation, and shared assignment.
-5. Confirm the browser console has no repeating MutationObserver or duplicate submit-handler errors.
+## Permanent backup rule
 
-## Next backup rule
+After any completed website change:
 
-Whenever an active runtime file changes:
-
-1. Update its module version header.
-2. Update its query-string version in the loading HTML.
-3. Update this manifest with the new blob SHA.
-4. Record the new commit SHA.
-5. Update `README.md` if architecture or permissions changed.
+1. Update the affected file version or cache query string when required.
+2. Update `README.md` when behavior or architecture changes.
+3. Update this backup manifest.
+4. Update `SHAS.md` with the new blob and commit SHAs.
+5. Verify the live GitHub Pages deployment.
+6. Do not delete or remove any file, page, feature, field, or module without asking the owner first.
