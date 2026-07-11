@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Election Operations</title>
+  <style>
+    body{margin:0;background:#eef3f9;color:#132238;font-family:Inter,Arial,sans-serif}.top{background:#14243a;color:#fff;padding:20px 24px}.top h1{margin:0;font-size:28px}.wrap{max-width:1200px;margin:auto;padding:24px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card,.panel{background:#fff;border-radius:18px;padding:20px;box-shadow:0 8px 28px rgba(20,42,78,.08)}.card span{display:block;color:#637a98;font-size:12px;font-weight:800;text-transform:uppercase}.card strong{display:block;margin-top:8px;font-size:30px}.panel{margin-top:18px}.buttons{display:flex;gap:10px;flex-wrap:wrap}.buttons button{border:0;border-radius:12px;padding:12px 18px;background:#4f7df3;color:#fff;font-weight:800;cursor:pointer}.buttons button:last-child{background:#8290a5}.hours{display:grid;gap:10px}.hour{display:grid;grid-template-columns:70px 1fr 50px;gap:12px;align-items:center}.bar{height:10px;background:#e8eef7;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;background:#4f7df3}.note{color:#68788d;font-size:13px;margin-top:12px}.error{background:#fff3cd;color:#664d03;padding:14px;border-radius:12px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <header class="top"><h1>Zero Day Operations</h1></header>
+  <main class="wrap"><div id="app">Loading operations…</div></main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="../js/config.js?v=20"></script>
+  <script>
+    const cfg=window.CampaignConfig;
+    const db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+    async function load(){
+      const app=document.getElementById('app');
+      const {data,error}=await db.from('zero_day_events').select('delta,created_at').order('created_at');
+      if(error){app.innerHTML='<div class="error">'+error.message+'</div>';return}
+      const events=data||[],target=420,recorded=Math.max(0,events.reduce((s,e)=>s+Number(e.delta||0),0)),remaining=Math.max(0,target-recorded),progress=target?Math.round(recorded/target*100):0;
+      const map=new Map();events.forEach(e=>{const d=new Date(e.created_at);if(Number.isNaN(d.getTime()))return;const h=String(d.getHours()).padStart(2,'0')+':00';map.set(h,(map.get(h)||0)+Number(e.delta||0))});
+      const hours=[...map.entries()].map(([hour,total])=>({hour,total})).filter(x=>x.total!==0),max=Math.max(1,...hours.map(x=>Math.abs(x.total)));
+      app.innerHTML='<section class="grid">'+
+      '<article class="card"><span>Operational Target</span><strong>'+target+'</strong></article>'+
+      '<article class="card"><span>Recorded Turnout</span><strong>'+recorded+'</strong></article>'+
+      '<article class="card"><span>Remaining</span><strong>'+remaining+'</strong></article>'+
+      '<article class="card"><span>Progress</span><strong>'+progress+'%</strong></article></section>'+
+      '<section class="panel"><h2>Record Aggregate Turnout</h2><div class="buttons"><button data-d="1">+1</button><button data-d="5">+5</button><button data-d="10">+10</button><button data-d="-1">−1 correction</button></div><div class="note">Totals only. No names, IDs, or person-level turnout are stored.</div></section>'+
+      '<section class="panel"><h2>Hourly Activity</h2><div class="hours">'+(hours.length?hours.map(x=>'<div class="hour"><strong>'+x.hour+'</strong><div class="bar"><i style="width:'+Math.min(100,Math.round(Math.abs(x.total)/max*100))+'%"></i></div><span>'+x.total+'</span></div>').join(''):'<div class="note">No turnout entries yet.</div>')+'</div></section>';
+    }
+    document.addEventListener('click',async e=>{const b=e.target.closest('[data-d]');if(!b)return;const delta=Number(b.dataset.d);b.disabled=true;const {error}=await db.from('zero_day_events').insert({event_type:delta<0?'correction':'vote',delta});b.disabled=false;if(error)alert(error.message);else load()});
+    load();
+  </script>
+</body>
+</html>
