@@ -1,4 +1,4 @@
-/* MODULE: Campaign Workflow Hotfix | VERSION: 1.0.0 | BUILD: 2026.07.10 */
+/* MODULE: Campaign Workflow Hotfix | VERSION: 1.0.1 | BUILD: 2026.07.11 */
 (() => {
   'use strict';
 
@@ -20,6 +20,13 @@
     return !!window.CampaignApp?.state;
   }
 
+  function splitAssignees(value) {
+    return text(value)
+      .split(',')
+      .map(name => text(name))
+      .filter(Boolean);
+  }
+
   function rebuildMissingHistory() {
     if (!appReady()) return;
     const { state } = window.CampaignApp;
@@ -28,17 +35,18 @@
     );
 
     for (const resident of state.rows) {
-      const assignee = text(resident.vote_assigned_by);
-      if (!assignee) continue;
-      const key = `${String(resident.id)}|${assignee.toLowerCase()}`;
-      if (existing.has(key)) continue;
-      state.assignments.push({
-        resident_id: resident.id,
-        assignee_name: assignee,
-        assigned_at: resident.vote_assigned_at || resident.updated_at || new Date(0).toISOString(),
-        recovered: true
-      });
-      existing.add(key);
+      const assignees = splitAssignees(resident.vote_assigned_by);
+      for (const assignee of assignees) {
+        const key = `${String(resident.id)}|${assignee.toLowerCase()}`;
+        if (existing.has(key)) continue;
+        state.assignments.push({
+          resident_id: resident.id,
+          assignee_name: assignee,
+          assigned_at: resident.vote_assigned_at || resident.updated_at || new Date(0).toISOString(),
+          recovered: true
+        });
+        existing.add(key);
+      }
     }
 
     state.assignments.sort((a, b) => new Date(b.assigned_at || 0) - new Date(a.assigned_at || 0));
@@ -130,11 +138,12 @@
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
-      if (appReady()) {
+      if (appReady() && window.CampaignApp.state.rows.length > 0) {
         clearInterval(timer);
         rebuildMissingHistory();
+        window.dispatchEvent(new Event('hashchange'));
         document.dispatchEvent(new CustomEvent('campaign:dashboard'));
-      } else if (attempts >= 100) {
+      } else if (attempts >= 200) {
         clearInterval(timer);
       }
     }, 100);
