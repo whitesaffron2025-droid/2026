@@ -1,4 +1,4 @@
-/* MODULE: Resident Selection Assignment Workflow | VERSION: 1.1.0 */
+/* MODULE: Resident Row Selection Assignment Workflow | VERSION: 1.2.0 */
 (() => {
   'use strict';
 
@@ -59,8 +59,15 @@
       style.id = 'residentSelectionStyle';
       style.textContent = `
         .resident-assigned-badge{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;line-height:1.25}
-        .resident-selection-cell{display:flex;align-items:center;gap:8px}
         #residentSelectionBar input{min-width:210px}
+        .resident-selectable-row{cursor:pointer;transition:background-color .15s ease,box-shadow .15s ease}
+        .resident-selectable-row:hover{background:#f8fbff}
+        .resident-selectable-row.is-selected{background:#dbeafe!important;box-shadow:inset 4px 0 0 #2563eb}
+        .resident-selectable-row.is-selected td{background:transparent!important}
+        .resident-gallery-card.resident-selectable-card{cursor:pointer;transition:box-shadow .15s ease,transform .15s ease}
+        .resident-gallery-card.resident-selectable-card.is-selected{box-shadow:0 0 0 3px #2563eb!important;background:#eff6ff}
+        .resident-selection-mark{display:none;margin-left:8px;padding:2px 7px;border-radius:999px;background:#2563eb;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}
+        .is-selected .resident-selection-mark{display:inline-block}
       `;
       document.head.appendChild(style);
     }
@@ -72,7 +79,7 @@
       bar.innerHTML = `
         <div>
           <strong>Select residents and save</strong>
-          <small>Choose an assignee to reload saved selections. Green labels show every saved assignment.</small>
+          <small>Click a resident row to select or unselect it. Green labels show saved assignments.</small>
         </div>
         <label style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span>Assignee</span>
@@ -92,22 +99,19 @@
       const edit = card.querySelector('[data-edit-section="residents"][data-edit-id]');
       if (!edit) return;
       const id = String(edit.dataset.editId);
-
-      if (!card.querySelector('.resident-select-checkbox')) {
-        const box = document.createElement('input');
-        box.type = 'checkbox';
-        box.className = 'resident-select-checkbox';
-        box.dataset.residentId = id;
-        box.setAttribute('aria-label', 'Select resident');
-        box.style.cssText = 'position:absolute;top:10px;left:10px;width:22px;height:22px;z-index:3';
-        card.style.position = 'relative';
-        card.prepend(box);
-      }
+      card.classList.add('resident-selectable-card');
+      card.dataset.residentSelectId = id;
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', 'Select resident');
 
       const body = card.querySelector('.resident-gallery-body');
       if (body) {
         body.querySelector('.resident-assigned-badge')?.remove();
         body.insertAdjacentHTML('beforeend', assignedBadge(id));
+        if (!body.querySelector('.resident-selection-mark')) {
+          body.insertAdjacentHTML('beforeend', '<span class="resident-selection-mark">Selected</span>');
+        }
       }
     });
 
@@ -115,32 +119,44 @@
       const edit = row.querySelector('[data-edit-section="residents"][data-edit-id]');
       if (!edit) return;
       const id = String(edit.dataset.editId);
-      const firstCell = row.querySelector('td');
-      const nameCell = row.querySelectorAll('td')[1];
-      if (!firstCell) return;
+      row.classList.add('resident-selectable-row');
+      row.dataset.residentSelectId = id;
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('aria-label', 'Select resident');
 
-      if (!row.querySelector('.resident-select-checkbox')) {
-        const box = document.createElement('input');
-        box.type = 'checkbox';
-        box.className = 'resident-select-checkbox';
-        box.dataset.residentId = id;
-        box.setAttribute('aria-label', 'Select resident');
-        box.style.cssText = 'width:20px;height:20px;margin-right:10px;vertical-align:middle';
-        firstCell.prepend(box);
-      }
-
+      const nameCell = row.querySelectorAll('td')[3] || row.querySelectorAll('td')[1];
       if (nameCell) {
         nameCell.querySelector('.resident-assigned-badge')?.remove();
+        nameCell.querySelector('.resident-selection-mark')?.remove();
         nameCell.insertAdjacentHTML('beforeend', assignedBadge(id));
+        nameCell.insertAdjacentHTML('beforeend', '<span class="resident-selection-mark">Selected</span>');
       }
     });
 
-    syncCheckboxes();
+    syncSelectionState();
   }
 
   function updateSelectionCount() {
     const count = document.getElementById('residentSelectionCount');
     if (count) count.textContent = `${selectedIds.size} selected`;
+  }
+
+  function syncSelectionState() {
+    document.querySelectorAll('[data-resident-select-id]').forEach(element => {
+      const selected = selectedIds.has(String(element.dataset.residentSelectId));
+      element.classList.toggle('is-selected', selected);
+      element.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+    updateSelectionCount();
+  }
+
+  function toggleResidentSelection(element) {
+    const id = String(element?.dataset?.residentSelectId || '');
+    if (!id) return;
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    syncSelectionState();
   }
 
   async function loadAssigneeSelection(name) {
@@ -152,7 +168,7 @@
     if (input && input.value !== activeAssignee) input.value = activeAssignee;
 
     if (!activeAssignee) {
-      syncCheckboxes();
+      syncSelectionState();
       return;
     }
 
@@ -164,14 +180,7 @@
       .ilike('assignee_name', activeAssignee);
     if (error) throw error;
     (data || []).forEach(row => selectedIds.add(String(row.resident_id)));
-    syncCheckboxes();
-  }
-
-  function syncCheckboxes() {
-    document.querySelectorAll('.resident-select-checkbox').forEach(box => {
-      box.checked = selectedIds.has(String(box.dataset.residentId));
-    });
-    updateSelectionCount();
+    syncSelectionState();
   }
 
   async function saveSelection() {
@@ -277,23 +286,28 @@
       .filter(item => party === 'all' || String(item.resident.party || '').toUpperCase() === party)
       .filter(item => !addressFilter || addressFilter === 'all' || text(item.resident.house) === addressFilter)
       .filter(item => !assigneeFilter || assigneeFilter === 'all' || text(item.assignment.assignee_name) === assigneeFilter)
-      .filter(item => !query || [item.resident.name, item.resident.national_id, item.resident.phone, item.resident.house, item.assignment.assignee_name]
+      .filter(item => !query || [item.resident.id, item.resident.name, item.resident.national_id, item.resident.phone, item.resident.house, item.assignment.assignee_name]
         .map(text).join(' ').toLowerCase().includes(query));
 
     const table = document.querySelector('#pageContent .data-table');
     if (!table) return;
     table.innerHTML = `
-      <thead><tr><th>Photo</th><th>Name / ID</th><th>Official Address</th><th>Phone</th><th>Assignee</th><th>Assigned At</th><th>Action</th></tr></thead>
+      <thead><tr><th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Assignee</th><th>Assigned At</th><th>Action</th></tr></thead>
       <tbody>${rows.map(({ assignment, resident }) => `
         <tr>
+          <td>${resident.id}</td>
           <td>${resident.photo_url ? `<img class="avatar avatar-image" src="${String(resident.photo_url).replace(/"/g, '&quot;')}" alt="">` : '<span class="avatar">?</span>'}</td>
-          <td><strong>${text(resident.name) || 'No name'}</strong><br><small>${text(resident.national_id) || 'No ID'}</small></td>
+          <td>${text(resident.national_id) || 'No ID'}</td>
+          <td><strong>${text(resident.name) || 'No name'}</strong></td>
           <td>${text(resident.house) || 'No Address'}</td>
+          <td>${text(resident.lives_in || resident.living_place) || 'Not recorded'}</td>
           <td>${text(resident.phone) || '-'}</td>
+          <td>${text(resident.sex) || '-'}</td>
+          <td>${text(resident.age) || '-'}</td>
           <td>${text(assignment.assignee_name)}</td>
           <td>${assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleString('en-GB') : '-'}</td>
           <td><button class="btn primary" data-edit-id="${resident.id}" data-edit-section="assign">Edit</button></td>
-        </tr>`).join('') || '<tr><td colspan="7">No saved assignments found</td></tr>'}</tbody>`;
+        </tr>`).join('') || '<tr><td colspan="12">No saved assignments found</td></tr>'}</tbody>`;
 
     const pill = document.querySelector('#pageContent .record-pill');
     if (pill) pill.textContent = `${rows.length.toLocaleString()} records`;
@@ -314,15 +328,6 @@
   }
 
   document.addEventListener('change', event => {
-    const box = event.target.closest('.resident-select-checkbox');
-    if (box) {
-      const id = String(box.dataset.residentId);
-      if (box.checked) selectedIds.add(id);
-      else selectedIds.delete(id);
-      updateSelectionCount();
-      return;
-    }
-
     if (event.target.id === 'residentSelectionAssignee') {
       loadAssigneeSelection(event.target.value).catch(error => alert(error.message));
     }
@@ -332,8 +337,26 @@
     if (event.target.closest('#loadResidentSelection')) {
       const name = document.getElementById('residentSelectionAssignee')?.value;
       loadAssigneeSelection(name).catch(error => alert(error.message));
+      return;
     }
-    if (event.target.closest('#saveResidentSelection')) saveSelection();
+    if (event.target.closest('#saveResidentSelection')) {
+      saveSelection();
+      return;
+    }
+
+    const selectable = event.target.closest('[data-resident-select-id]');
+    if (!selectable || app()?.state?.section !== 'residents') return;
+    if (event.target.closest('button,a,input,select,textarea,label,[data-photo-click]')) return;
+    toggleResidentSelection(selectable);
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const selectable = event.target.closest('[data-resident-select-id]');
+    if (!selectable || app()?.state?.section !== 'residents') return;
+    if (event.target.closest('button,a,input,select,textarea')) return;
+    event.preventDefault();
+    toggleResidentSelection(selectable);
   });
 
   document.addEventListener('DOMContentLoaded', () => {
