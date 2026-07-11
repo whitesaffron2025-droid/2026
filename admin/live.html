@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Live Turnout · 2026 Campaign Manager</title>
+  <title>PNC Live Turnout · 2026 Campaign Manager</title>
   <link rel="stylesheet" href="css/admin.css?v=20">
   <link rel="stylesheet" href="css/live-checkin.css?v=5">
 </head>
 <body>
   <header class="live-header">
-    <div class="live-brand"><strong>2026 Campaign Manager</strong><small>Live voter turnout</small></div>
+    <div class="live-brand"><strong>2026 Campaign Manager</strong><small>PNC live voter turnout</small></div>
     <nav><a href="index.html">Residents</a><a class="active" href="live.html">Live</a></nav>
   </header>
 
   <main class="live-shell">
     <section class="live-top">
       <div>
-        <h1>Vilimale Dhaaira · Turnout</h1>
-        <p>Select a dashboard card to filter the list. Change vote status, then save to Supabase.</p>
+        <h1>PNC · Vilimale Dhaaira Turnout</h1>
+        <p>This page shows PNC residents only. Select a dashboard card to filter the list, change vote status, then save to Supabase.</p>
       </div>
       <div class="live-stats" aria-label="Turnout filters">
         <button type="button" class="stat voted" data-status-card="VOTED">
@@ -27,17 +27,12 @@
           <strong id="notVotedCount">0</strong><span>Not Yet</span>
         </button>
         <button type="button" class="stat total active" data-status-card="ALL">
-          <strong id="totalCount">0</strong><span>Total</span>
+          <strong id="totalCount">0</strong><span>PNC Total</span>
         </button>
       </div>
     </section>
 
     <section class="live-toolbar">
-      <select id="partyFilter" aria-label="Party filter">
-        <option value="ALL">All parties</option>
-        <option value="PNC">PNC</option>
-        <option value="MDP">MDP</option>
-      </select>
       <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place or mobile">
       <select id="statusFilter" aria-label="Status filter">
         <option value="ALL">All statuses</option>
@@ -59,15 +54,15 @@
             <th>ID</th><th>Photo</th><th>ID Number</th><th>Name</th><th>Official Address</th><th>Living Now</th><th>Mobile</th><th>Sex</th><th>Age</th><th>Vote Status</th>
           </tr>
         </thead>
-        <tbody id="residentRows"><tr><td colspan="10">Loading residents…</td></tr></tbody>
+        <tbody id="residentRows"><tr><td colspan="10">Loading PNC residents…</td></tr></tbody>
       </table>
     </section>
 
-    <div class="footer-note">Dashboard cards filter the list. Vote changes are written only after Save Changes.</div>
+    <div class="footer-note">Only PNC residents are shown. Vote changes are written only after Save Changes.</div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js?v=20"></script>
-  <script src="js/live-checkin.js?v=4"></script>
+  <script src="js/live-checkin.js?v=5"></script>
 </body>
 </html>
