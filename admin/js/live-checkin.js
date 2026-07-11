@@ -36,20 +36,25 @@
     render();
   }
 
-  function filteredRows() {
+  function baseFilteredRows() {
     const party = document.getElementById('partyFilter').value;
-    const status = document.getElementById('statusFilter').value;
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
     return rows.filter(row => {
-      const voted = currentVotedValue(row);
       const partyMatches = party === 'ALL' || String(row.party || '').toUpperCase() === party;
-      const statusMatches = status === 'ALL' || (status === 'VOTED' ? voted : !voted);
       const queryMatches = !query || [
         row.id, row.national_id, row.name, row.house,
         row.lives_in, row.living_place, row.phone, row.sex, row.age
       ].map(value => String(value ?? '').toLowerCase()).join(' ').includes(query);
-      return partyMatches && statusMatches && queryMatches;
+      return partyMatches && queryMatches;
+    });
+  }
+
+  function filteredRows() {
+    const status = document.getElementById('statusFilter').value;
+    return baseFilteredRows().filter(row => {
+      const voted = currentVotedValue(row);
+      return status === 'ALL' || (status === 'VOTED' ? voted : !voted);
     });
   }
 
@@ -60,7 +65,17 @@
     return date.toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' });
   }
 
+  function syncStatusCards() {
+    const status = document.getElementById('statusFilter').value;
+    document.querySelectorAll('[data-status-card]').forEach(card => {
+      const active = card.dataset.statusCard === status;
+      card.classList.toggle('active', active);
+      card.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
   function render() {
+    const baseList = baseFilteredRows();
     const list = filteredRows();
     const body = document.getElementById('residentRows');
 
@@ -93,11 +108,12 @@
           ${isPending ? '<small class="pending-label">Pending save</small>' : time}
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="10" class="no-results">No residents found</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="no-results">No residents found for this filter</td></tr>';
 
-    document.getElementById('totalCount').textContent = list.length.toLocaleString();
-    document.getElementById('votedCount').textContent = list.filter(currentVotedValue).length.toLocaleString();
-    document.getElementById('notVotedCount').textContent = list.filter(row => !currentVotedValue(row)).length.toLocaleString();
+    document.getElementById('totalCount').textContent = baseList.length.toLocaleString();
+    document.getElementById('votedCount').textContent = baseList.filter(currentVotedValue).length.toLocaleString();
+    document.getElementById('notVotedCount').textContent = baseList.filter(row => !currentVotedValue(row)).length.toLocaleString();
+    syncStatusCards();
     updateSaveControls();
   }
 
@@ -175,7 +191,18 @@
 
   document.addEventListener('click', event => {
     const toggle = event.target.closest('[data-toggle-vote]');
-    if (toggle) toggleVoteStatus(toggle.dataset.toggleVote);
+    if (toggle) {
+      toggleVoteStatus(toggle.dataset.toggleVote);
+      return;
+    }
+
+    const card = event.target.closest('[data-status-card]');
+    if (card) {
+      document.getElementById('statusFilter').value = card.dataset.statusCard;
+      render();
+      document.querySelector('.live-table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
 
     if (event.target.closest('#saveChanges')) saveChanges();
 
