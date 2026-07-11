@@ -188,6 +188,55 @@
     }
   }
 
+  function csvCell(value) {
+    const text = String(value ?? '');
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function exportFilteredCsv() {
+    const list = filteredRows();
+    if (!list.length) {
+      alert('There are no filtered residents to export.');
+      return;
+    }
+
+    const headers = [
+      'ID', 'ID Number', 'Name', 'Official Address', 'Living Now',
+      'Mobile', 'Sex', 'Age', 'Vote Status', 'Voted At'
+    ];
+
+    const lines = [headers.map(csvCell).join(',')];
+    list.forEach(row => {
+      const voted = currentVotedValue(row);
+      const votedAt = voted ? (pending.has(String(row.id)) ? 'Pending save' : formatSavedTime(row.voted_at)) : '';
+      lines.push([
+        row.id,
+        row.national_id,
+        row.name,
+        row.house,
+        row.lives_in || row.living_place || 'Not recorded',
+        row.phone,
+        row.sex,
+        row.age,
+        voted ? 'Voted' : 'Not Yet',
+        votedAt
+      ].map(csvCell).join(','));
+    });
+
+    const status = document.getElementById('statusFilter').value.toLowerCase();
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `pnc-live-${status}-${date}.csv`;
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   document.addEventListener('click', event => {
     const toggle = event.target.closest('[data-toggle-vote]');
     if (toggle) {
@@ -203,6 +252,7 @@
       return;
     }
 
+    if (event.target.closest('#exportFiltered')) exportFilteredCsv();
     if (event.target.closest('#saveChanges')) saveChanges();
 
     if (event.target.closest('#clearFilters')) {
