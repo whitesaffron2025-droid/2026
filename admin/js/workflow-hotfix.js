@@ -1,10 +1,11 @@
-/* MODULE: Campaign Workflow Hotfix | VERSION: 1.0.1 | BUILD: 2026.07.11 */
+/* MODULE: Campaign Workflow Hotfix | VERSION: 1.1.0 | BUILD: 2026.07.11 */
 (() => {
   'use strict';
 
   const text = value => String(value ?? '').trim();
   let client = null;
   let assignmentTableAvailable = true;
+  let defaultPartyApplied = false;
 
   function getClient() {
     if (client) return client;
@@ -20,13 +21,6 @@
     return !!window.CampaignApp?.state;
   }
 
-  function splitAssignees(value) {
-    return text(value)
-      .split(',')
-      .map(name => text(name))
-      .filter(Boolean);
-  }
-
   function rebuildMissingHistory() {
     if (!appReady()) return;
     const { state } = window.CampaignApp;
@@ -35,8 +29,10 @@
     );
 
     for (const resident of state.rows) {
-      const assignees = splitAssignees(resident.vote_assigned_by);
-      for (const assignee of assignees) {
+      const assigneeText = text(resident.vote_assigned_by);
+      if (!assigneeText) continue;
+      const names = assigneeText.split(',').map(text).filter(Boolean);
+      for (const assignee of names) {
         const key = `${String(resident.id)}|${assignee.toLowerCase()}`;
         if (existing.has(key)) continue;
         state.assignments.push({
@@ -50,6 +46,35 @@
     }
 
     state.assignments.sort((a, b) => new Date(b.assigned_at || 0) - new Date(a.assigned_at || 0));
+  }
+
+  function applyDefaultParty() {
+    if (!appReady() || defaultPartyApplied) return;
+    const { state } = window.CampaignApp;
+    if (!state.rows.length) return;
+    defaultPartyApplied = true;
+    state.party = 'PNC';
+    state.visible = 28;
+    const select = document.getElementById('globalParty');
+    if (select) select.value = 'PNC';
+    select?.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function patchAssignSummary() {
+    if (!appReady()) return;
+    const { state } = window.CampaignApp;
+    if (state.section !== 'assign') return;
+
+    const rows = state.rows.filter(row => text(row.party).toUpperCase() === 'PNC');
+    const assigned = rows.filter(row => text(row.vote_assigned_by)).length;
+    const completed = rows.filter(row => text(row.vote_assigned_by) && text(row.reach_status) === 'reached').length;
+    const values = [rows.length, rows.length - assigned, assigned, completed];
+    const cards = document.querySelectorAll('.stats-grid .stat-card strong');
+    values.forEach((value, index) => {
+      if (cards[index]) cards[index].textContent = value.toLocaleString();
+    });
+    const pill = document.querySelector('.record-pill');
+    if (pill) pill.textContent = `${rows.length.toLocaleString()} records`;
   }
 
   async function insertAssignmentHistory(residentId, assignee, assignedAt) {
@@ -130,6 +155,7 @@
         app.state.assignments.unshift({ resident_id: residentId, assignee_name: assignee, assigned_at: assignedAt });
         await insertAssignmentHistory(residentId, assignee, assignedAt);
         document.dispatchEvent(new CustomEvent('campaign:dashboard'));
+        setTimeout(patchAssignSummary, 0);
       }
     }, 0);
   }
@@ -138,10 +164,11 @@
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
-      if (appReady() && window.CampaignApp.state.rows.length > 0) {
+      if (appReady() && window.CampaignApp.state.rows.length) {
         clearInterval(timer);
         rebuildMissingHistory();
-        window.dispatchEvent(new Event('hashchange'));
+        applyDefaultParty();
+        patchAssignSummary();
         document.dispatchEvent(new CustomEvent('campaign:dashboard'));
       } else if (attempts >= 200) {
         clearInterval(timer);
@@ -149,6 +176,14 @@
     }, 100);
   }
 
+  const observer = new MutationObserver(() => {
+    applyDefaultParty();
+    patchAssignSummary();
+  });
+
   document.addEventListener('submit', validateAssignmentForm, true);
-  document.addEventListener('DOMContentLoaded', waitForApp);
+  document.addEventListener('DOMContentLoaded', () => {
+    observer.observe(document.body, { childList: true, subtree: true });
+    waitForApp();
+  });
 })();
