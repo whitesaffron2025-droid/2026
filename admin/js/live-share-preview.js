@@ -1,13 +1,19 @@
-/* Live Public Share v3 */
+/* Live Public Share v4 */
 (() => {
   'use strict';
   let busy = false;
+
   const pick = id => {
     const el = document.getElementById(id);
     if (!el) return '';
-    return el.tagName === 'SELECT' ? (el.options[el.selectedIndex]?.text || '') : (el.value || '').trim();
+    return el.tagName === 'SELECT'
+      ? (el.options[el.selectedIndex]?.text || '')
+      : (el.value || '').trim();
   };
+
+  const normalized = value => String(value || '').trim().toLowerCase();
   const rows = () => [...document.querySelectorAll('#residentRows tr[data-resident-id]')];
+
   const payloadRow = row => {
     const c = row.querySelectorAll('td');
     return {
@@ -15,7 +21,6 @@
       photo: c[1]?.querySelector('img')?.src || '',
       idNumber: c[2]?.textContent.trim() || '',
       name: c[3]?.querySelector('strong')?.textContent.trim() || '',
-      assignees: (c[3]?.querySelector('.assignment-note')?.textContent || '').replace(/^Assigned:\s*/i, '').trim(),
       address: c[4]?.textContent.trim() || '',
       livingNow: c[5]?.textContent.trim() || '',
       mobile: c[6]?.textContent.trim() || '',
@@ -25,41 +30,58 @@
       turnout: c[9]?.querySelector('.vote-toggle span:last-child')?.textContent.trim() || 'Not Yet'
     };
   };
+
   async function createLink() {
     if (busy) return;
-    const visible = rows();
-    if (!visible.length) return alert('There are no filtered residents to share.');
+
+    const sharedRows = rows()
+      .map(payloadRow)
+      .filter(row => normalized(row.address) !== 'dhafthar');
+
+    if (!sharedRows.length) {
+      alert('There are no shareable residents for the current filters.');
+      return;
+    }
+
     const btn = document.getElementById('sharePreview');
     busy = true;
     btn.disabled = true;
     btn.textContent = 'Creating Link…';
+
     try {
       const cfg = window.CampaignConfig;
       const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+      const voted = sharedRows.filter(row => row.turnout === 'Voted').length;
+      const notYet = sharedRows.length - voted;
+
       const payload = {
         generated: new Date().toLocaleString('en-GB'),
         counts: {
-          visible: visible.length,
-          voted: document.getElementById('votedCount')?.textContent || '0',
-          notYet: document.getElementById('notVotedCount')?.textContent || '0',
-          total: document.getElementById('totalCount')?.textContent || '0'
+          visible: sharedRows.length,
+          voted,
+          notYet,
+          total: sharedRows.length
         },
         filters: {
           Address: pick('addressFilter'),
-          Assignment: pick('assignmentFilter'),
           'Campaign Vote': pick('campaignVoteFilter'),
           Search: pick('searchInput') || 'None',
           Turnout: pick('statusFilter')
         },
-        rows: visible.map(payloadRow)
+        rows: sharedRows
       };
-      const { data: token, error } = await db.rpc('create_live_turnout_share', { p_payload: payload, p_expires_hours: 168 });
+
+      const { data: token, error } = await db.rpc('create_live_turnout_share', {
+        p_payload: payload,
+        p_expires_hours: 168
+      });
       if (error) throw error;
+
       const url = new URL('live-preview.html', location.href);
       url.searchParams.set('s', token);
       try { await navigator.clipboard.writeText(url.href); } catch (_) {}
       window.open(url.href, '_blank', 'noopener');
-      alert('Public link created and copied. It works for 7 days.');
+      alert('Public link created and copied. Dhafthar and assignment details are excluded.');
     } catch (error) {
       console.error(error);
       alert('Public link could not be created. Please log in again and retry.');
@@ -69,7 +91,8 @@
       btn.textContent = 'Share Preview';
     }
   }
-  document.addEventListener('click', e => {
-    if (e.target.closest('#sharePreview')) createLink();
+
+  document.addEventListener('click', event => {
+    if (event.target.closest('#sharePreview')) createLink();
   });
 })();
