@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PNC Live Turnout · 2026 Campaign Manager</title>
   <link rel="stylesheet" href="css/admin.css?v=20">
-  <link rel="stylesheet" href="css/live-checkin.css?v=6">
+  <link rel="stylesheet" href="css/live-checkin.css?v=7">
 </head>
 <body>
   <header class="live-header">
@@ -17,7 +17,7 @@
     <section class="live-top">
       <div>
         <h1>PNC · Vilimale Dhaaira Turnout</h1>
-        <p>This page shows PNC residents only. Select a dashboard card to filter the list, change vote status, then save to Supabase.</p>
+        <p>This page shows PNC residents only. Use address, assignment, assigner, search, and vote-status filters.</p>
       </div>
       <div class="live-stats" aria-label="Turnout filters">
         <button type="button" class="stat voted" data-status-card="VOTED">
@@ -33,9 +33,20 @@
     </section>
 
     <section class="live-toolbar">
-      <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place or mobile">
-      <select id="statusFilter" aria-label="Status filter">
-        <option value="ALL">All statuses</option>
+      <select id="addressFilter" aria-label="Official address filter">
+        <option value="ALL">All Addresses</option>
+      </select>
+      <select id="assignmentFilter" aria-label="Assignment status filter">
+        <option value="ALL">All Assignments</option>
+        <option value="ASSIGNED">Assigned</option>
+        <option value="UNASSIGNED">Unassigned</option>
+      </select>
+      <select id="assignerFilter" aria-label="Assigner filter">
+        <option value="ALL">All Assigners</option>
+      </select>
+      <input id="searchInput" type="search" placeholder="Search DB ID, ID number, name, address, living place, mobile or assigner">
+      <select id="statusFilter" aria-label="Vote status filter">
+        <option value="ALL">All Vote Statuses</option>
         <option value="VOTED">Voted</option>
         <option value="NOT_VOTED">Not Yet</option>
       </select>
@@ -59,11 +70,11 @@
       </table>
     </section>
 
-    <div class="footer-note">Only PNC residents are shown. Vote changes are written only after Save Changes.</div>
+    <div class="footer-note">Only PNC residents are shown. Assignment filters read from resident_assignments. Vote changes are written only after Save Changes.</div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js?v=20"></script>
-  <script src="js/live-checkin.js?v=6"></script>
+  <script src="js/live-checkin.js?v=7"></script>
 </body>
 </html>
