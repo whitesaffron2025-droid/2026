@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Live Turnout · 2026 Campaign Manager</title>
   <link rel="stylesheet" href="css/admin.css?v=20">
-  <link rel="stylesheet" href="css/live-checkin.css?v=2">
+  <link rel="stylesheet" href="css/live-checkin.css?v=3">
 </head>
 <body>
   <header class="live-header">
@@ -17,7 +17,7 @@
     <section class="live-top">
       <div>
         <h1>Vilimale Dhaaira · Turnout</h1>
-        <p>Use the status button to update a resident. Every change saves immediately to Supabase.</p>
+        <p>Click a resident's vote-status button, review the pending changes, then save them to Supabase.</p>
       </div>
       <div class="live-stats">
         <div class="stat voted"><strong id="votedCount">0</strong><span>Voted</span></div>
@@ -39,7 +39,8 @@
         <option value="NOT_VOTED">Not Yet</option>
       </select>
       <button id="clearFilters" type="button" class="btn secondary">Clear</button>
-      <span id="saveState" class="save-state">Ready</span>
+      <button id="saveChanges" type="button" class="btn primary" disabled>Save Changes</button>
+      <span id="saveState" class="save-state">No pending changes</span>
     </section>
 
     <section class="live-table-wrap">
@@ -53,11 +54,11 @@
       </table>
     </section>
 
-    <div class="footer-note">Click only the Vote Status button. Saved rows show the exact saved time.</div>
+    <div class="footer-note">Click Vote Status to mark pending changes. Click Save Changes to write them to Supabase.</div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js?v=20"></script>
-  <script src="js/live-checkin.js?v=2"></script>
+  <script src="js/live-checkin.js?v=3"></script>
 </body>
 </html>
