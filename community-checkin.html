@@ -6,14 +6,19 @@
   <title>Community Event Check-In</title>
   <style>
     :root{font-family:Inter,system-ui,Arial,sans-serif;color:#172033;background:#f4f7fb}
-    *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:24px}.top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}.top h1{margin:0 0 6px;font-size:30px}.muted{color:#687386}.panel,.card{background:#fff;border:1px solid #dde4ee;border-radius:16px;box-shadow:0 8px 24px rgba(21,31,50,.06)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.card{padding:18px}.card span{display:block;color:#687386;font-size:13px}.card strong{display:block;font-size:30px;margin-top:7px}.panel{padding:18px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.toolbar input{flex:1;min-width:220px}.toolbar input,.toolbar button{border:1px solid #cfd8e5;border-radius:10px;padding:11px 13px;font:inherit}.toolbar button{cursor:pointer;background:#fff;font-weight:700}.toolbar .primary{background:#1769e0;color:#fff;border-color:#1769e0}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:13px 10px;border-bottom:1px solid #e6ebf2;text-align:left}th{font-size:12px;color:#687386;text-transform:uppercase;letter-spacing:.04em}.status{display:inline-block;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:800}.yes{background:#dcfce7;color:#166534}.no{background:#f1f5f9;color:#475569}.action{border:0;border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer}.mark{background:#1769e0;color:#fff}.undo{background:#e2e8f0;color:#334155}.empty{text-align:center;color:#687386;padding:28px}.footer-note{margin-top:12px;color:#687386;font-size:13px}@media(max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:14px}th:nth-child(2),td:nth-child(2){display:none}}@media print{.toolbar,.action,.footer-note{display:none}.wrap{max-width:none}.panel,.card{box-shadow:none}}
+    *{box-sizing:border-box}body{margin:0}.wrap{max-width:1100px;margin:auto;padding:24px}.top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}.top h1{margin:0 0 6px;font-size:30px}.muted{color:#687386}.panel,.card{background:#fff;border:1px solid #dde4ee;border-radius:16px;box-shadow:0 8px 24px rgba(21,31,50,.06)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.card{padding:18px}.card span{display:block;color:#687386;font-size:13px}.card strong{display:block;font-size:30px;margin-top:7px}.panel{padding:18px}.toolbar,.top-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.top-actions{margin:0}.toolbar input{flex:1;min-width:220px}.toolbar input,.toolbar button,.top-actions button{border:1px solid #cfd8e5;border-radius:10px;padding:11px 13px;font:inherit}.toolbar button,.top-actions button{cursor:pointer;background:#fff;font-weight:700}.toolbar .primary{background:#1769e0;color:#fff;border-color:#1769e0}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:13px 10px;border-bottom:1px solid #e6ebf2;text-align:left}th{font-size:12px;color:#687386;text-transform:uppercase;letter-spacing:.04em}.status{display:inline-block;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:800}.yes{background:#dcfce7;color:#166534}.no{background:#f1f5f9;color:#475569}.action{border:0;border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer}.mark{background:#1769e0;color:#fff}.undo{background:#e2e8f0;color:#334155}.empty{text-align:center;color:#687386;padding:28px}.footer-note{margin-top:12px;color:#687386;font-size:13px}.hidden{display:none}@media(max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:14px}th:nth-child(2),td:nth-child(2){display:none}}@media print{.toolbar,.top-actions,.action,.footer-note{display:none}.wrap{max-width:none}.panel,.card{box-shadow:none}}
   </style>
 </head>
 <body>
   <main class="wrap">
     <header class="top">
       <div><h1>Community Event Check-In</h1><div class="muted">Simple attendee attendance tracking stored on this device.</div></div>
-      <button id="printBtn" class="action undo" type="button">Print</button>
+      <div class="top-actions">
+        <button id="importBtn" type="button">Import CSV</button>
+        <button id="exportBtn" type="button">Export CSV</button>
+        <button id="printBtn" type="button">Print / PDF</button>
+        <input id="fileInput" class="hidden" type="file" accept=".csv,text/csv">
+      </div>
     </header>
 
     <section class="stats" aria-label="Attendance dashboard">
@@ -36,7 +41,7 @@
           <tbody id="attendeeBody"></tbody>
         </table>
       </div>
-      <div class="footer-note">Attendance updates are saved automatically in your browser using local storage.</div>
+      <div class="footer-note">Start by adding attendees manually or importing a CSV containing a Name column. Attendance updates are saved automatically in this browser.</div>
     </section>
   </main>
 
@@ -49,6 +54,7 @@
       function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
       function save(){localStorage.setItem(KEY,JSON.stringify(state.attendees))}
       function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+      function makeId(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
       function render(){
         const total=state.attendees.length;
         const attended=state.attendees.filter(a=>a.attended).length;
@@ -58,19 +64,52 @@
         $('remainingCount').textContent=total-attended;
         const q=state.search.trim().toLowerCase();
         const rows=state.attendees.filter(a=>!q||a.name.toLowerCase().includes(q));
-        $('attendeeBody').innerHTML=rows.length?rows.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${new Date(a.createdAt).toLocaleString('en-GB')}</td><td><span class="status ${a.attended?'yes':'no'}">${a.attended?'Attended':'Not Attended'}</span></td><td><button class="action ${a.attended?'undo':'mark'}" data-id="${a.id}">${a.attended?'Undo':'Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees found.</td></tr>';
+        $('attendeeBody').innerHTML=rows.length?rows.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${new Date(a.createdAt).toLocaleString('en-GB')}</td><td><span class="status ${a.attended?'yes':'no'}">${a.attended?'Attended':'Not Attended'}</span></td><td><button class="action ${a.attended?'undo':'mark'}" data-id="${a.id}">${a.attended?'Undo':'Mark Attended'}</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty">No attendees yet. Add a name or use Import CSV.</td></tr>';
       }
       function add(){
         const name=$('nameInput').value.trim();
         if(!name)return $('nameInput').focus();
-        state.attendees.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,attended:false,createdAt:new Date().toISOString(),attendedAt:null});
+        state.attendees.unshift({id:makeId(),name,attended:false,createdAt:new Date().toISOString(),attendedAt:null});
         $('nameInput').value='';save();render();$('nameInput').focus();
+      }
+      function csvCell(value){return `"${String(value??'').replace(/"/g,'""')}"`}
+      function exportCsv(){
+        if(!state.attendees.length)return alert('No attendees to export.');
+        const rows=[['Name','Status','Added At','Attended At'],...state.attendees.map(a=>[a.name,a.attended?'Attended':'Not Attended',a.createdAt,a.attendedAt||''])];
+        const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\n');
+        const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+        const link=document.createElement('a');link.href=url;link.download=`community-attendance-${new Date().toISOString().slice(0,10)}.csv`;link.click();URL.revokeObjectURL(url);
+      }
+      function parseCsvLine(line){
+        const out=[];let value='',quoted=false;
+        for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i++}else quoted=!quoted}else if(c===','&&!quoted){out.push(value.trim());value=''}else value+=c}out.push(value.trim());return out;
+      }
+      async function importCsv(file){
+        const text=await file.text();
+        const lines=text.split(/\r?\n/).filter(Boolean);
+        if(!lines.length)return alert('CSV is empty.');
+        const first=parseCsvLine(lines[0]);
+        const headerIndex=first.findIndex(v=>v.toLowerCase()==='name');
+        const start=headerIndex>=0?1:0;
+        const nameIndex=headerIndex>=0?headerIndex:0;
+        const existing=new Set(state.attendees.map(a=>a.name.toLowerCase()));
+        let added=0;
+        for(let i=start;i<lines.length;i++){
+          const name=(parseCsvLine(lines[i])[nameIndex]||'').trim();
+          if(!name||existing.has(name.toLowerCase()))continue;
+          state.attendees.push({id:makeId(),name,attended:false,createdAt:new Date().toISOString(),attendedAt:null});
+          existing.add(name.toLowerCase());added++;
+        }
+        save();render();alert(`${added} attendee${added===1?'':'s'} imported.`);
       }
       $('addBtn').addEventListener('click',add);
       $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
       $('searchInput').addEventListener('input',e=>{state.search=e.target.value;render()});
       $('attendeeBody').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;const a=state.attendees.find(x=>x.id===b.dataset.id);if(!a)return;a.attended=!a.attended;a.attendedAt=a.attended?new Date().toISOString():null;save();render()});
       $('clearBtn').addEventListener('click',()=>{if(!state.attendees.length)return;if(confirm('Remove all attendees and attendance records?')){state.attendees=[];save();render()}});
+      $('importBtn').addEventListener('click',()=>$('fileInput').click());
+      $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(file)await importCsv(file);e.target.value=''});
+      $('exportBtn').addEventListener('click',exportCsv);
       $('printBtn').addEventListener('click',()=>window.print());
       render();
     })();
